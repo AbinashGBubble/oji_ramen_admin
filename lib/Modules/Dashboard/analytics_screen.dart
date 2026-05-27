@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -29,6 +30,11 @@ class _AnalyticsScreenState
 
     final refreshToken =
       await SecureStorageService.getRefreshToken();
+
+    final userMap = await SecureStorageService.getUser();
+    final userJson = userMap != null
+        ? jsonEncode(userMap).replaceAll("'", "\\'")
+        : '{}';
 
     final cookieManager =
       WebViewCookieManager();
@@ -67,24 +73,24 @@ class _AnalyticsScreenState
           onPageFinished: (url)
           async {
 
-            // also keep localStorage
             await controller!
             .runJavaScript("""
 
-            localStorage.setItem(
-            'oji_token',
-            '$accessToken'
-            );
+            localStorage.setItem('oji_token', '$accessToken');
+            localStorage.setItem('oji_refresh_token', '$refreshToken');
+            localStorage.setItem('oji_user', '$userJson');
 
-            localStorage.setItem(
-            'oji_refresh_token',
-            '$refreshToken'
-            );
+            if (!localStorage.getItem('__flutter_reloaded')) {
+              localStorage.setItem('__flutter_reloaded', '1');
+              window.location.reload();
+            } else {
+              localStorage.removeItem('__flutter_reloaded');
+            }
 
             """);
 
             debugPrint(
-            "SESSION READY"
+            "SESSION READY |||||||local storage : $accessToken"
             );
 
           },

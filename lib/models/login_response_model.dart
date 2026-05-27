@@ -60,6 +60,7 @@ class Admin {
   final String email;
   final String role;
   final int restaurantId;
+  final int? roleId;
 
   Admin({
     required this.id,
@@ -67,6 +68,7 @@ class Admin {
     required this.email,
     required this.role,
     required this.restaurantId,
+    this.roleId,
   });
 
   factory Admin.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,7 @@ class Admin {
       email: json['email'] ?? "",
       role: json['role'] ?? "",
       restaurantId: json['restaurant_id'] ?? 0,
+      roleId: json['roleId'],
     );
   }
 
@@ -86,6 +89,7 @@ class Admin {
       'email': email,
       'role': role,
       'restaurant_id': restaurantId,
+      if (roleId != null) 'roleId': roleId,
     };
   }
 }
