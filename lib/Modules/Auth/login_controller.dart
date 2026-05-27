@@ -67,6 +67,16 @@ class LoginController extends GetxController {
           refreshToken: refreshToken,
         );
 
+        /// Save admin user for WebView session
+        final admin = result.data!.admin;
+        await SecureStorageService.saveUser({
+          'id': admin.id.toString(),
+          'name': admin.name,
+          'email': admin.email,
+          'role': admin.role,
+          if (admin.roleId != null) 'roleId': admin.roleId,
+        });
+
         debugPrint("Access Token Saved: $accessToken");
         debugPrint("Refresh Token Saved: $refreshToken");
 
