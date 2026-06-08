@@ -1,101 +1,101 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/redeem/get_all_user_model.dart';
-import 'package:loyalty_admin/services/network/get_all_user_api_service.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:loyalty_admin/Modules/redeem/get_all_user_model.dart';
+// import 'package:loyalty_admin/services/network/get_all_user_api_service.dart';
 
-class GetAllUserController extends GetxController {
+// class GetAllUserController extends GetxController {
 
-  final _api = GetAllUserApiService();
+//   final _api = GetAllUserApiService();
 
-  final isLoading = false.obs;
-  final isLoadingMore = false.obs;
-  final errorMessage = ''.obs;
+//   final isLoading = false.obs;
+//   final isLoadingMore = false.obs;
+//   final errorMessage = ''.obs;
 
-  final users = <UserData>[].obs;
+//   final users = <UserData>[].obs;
 
-  final searchController = TextEditingController();
+//   final searchController = TextEditingController();
 
-  int limit = 10;
-  int offset = 0;
-  bool hasMore = true;
+//   int limit = 10;
+//   int offset = 0;
+//   bool hasMore = true;
 
-  /// search query
-  final searchQuery = ''.obs;
+//   /// search query
+//   final searchQuery = ''.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
+//   @override
+//   void onInit() {
+//     super.onInit();
 
-    /// debounce search
-    debounce(searchQuery, (_) {
-      resetPagination();
-      fetchUsers();
-    }, time: const Duration(milliseconds: 500));
+//     /// debounce search
+//     debounce(searchQuery, (_) {
+//       resetPagination();
+//       fetchUsers();
+//     }, time: const Duration(milliseconds: 500));
 
-    fetchUsers();
-  }
+//     fetchUsers();
+//   }
 
-  void onSearchChanged(String value) {
-    searchQuery.value = value;
-  }
+//   void onSearchChanged(String value) {
+//     searchQuery.value = value;
+//   }
 
-  /// reset pagination when searching
-  void resetPagination() {
-    offset = 0;
-    hasMore = true;
-    users.clear();
-  }
+//   /// reset pagination when searching
+//   void resetPagination() {
+//     offset = 0;
+//     hasMore = true;
+//     users.clear();
+//   }
 
-  /// fetch users
-  Future<void> fetchUsers() async {
+//   /// fetch users
+//   Future<void> fetchUsers() async {
 
-    if (!hasMore) return;
+//     if (!hasMore) return;
 
-    try {
+//     try {
 
-      if (offset == 0) {
-        isLoading.value = true;
-      } else {
-        isLoadingMore.value = true;
-      }
+//       if (offset == 0) {
+//         isLoading.value = true;
+//       } else {
+//         isLoadingMore.value = true;
+//       }
 
-      final response = await _api.getAllUser(
-        search: searchQuery.value,
-        limit: limit,
-        offset: offset,
-      );
+//       final response = await _api.getAllUser(
+//         search: searchQuery.value,
+//         limit: limit,
+//         offset: offset,
+//       );
 
-      if (response == null) {
-        errorMessage.value = "Unable to load users";
-        return;
-      }
+//       if (response == null) {
+//         errorMessage.value = "Unable to load users";
+//         return;
+//       }
 
-      final result = GetAllUsersResponse.fromJson(response);
+//       final result = GetAllUsersResponse.fromJson(response);
 
-      if (result.success == true) {
+//       if (result.success == true) {
 
-        users.addAll(result.data ?? []);
+//         users.addAll(result.data ?? []);
 
-        hasMore = result.pagination?.hasMore ?? false;
+//         hasMore = result.pagination?.hasMore ?? false;
 
-        offset += limit;
+//         offset += limit;
 
-      } else {
-        errorMessage.value = result.message ?? "Something went wrong";
-      }
+//       } else {
+//         errorMessage.value = result.message ?? "Something went wrong";
+//       }
 
-    } catch (e) {
-      errorMessage.value = "Something went wrong";
-    } finally {
-      isLoading.value = false;
-      isLoadingMore.value = false;
-    }
-  }
+//     } catch (e) {
+//       errorMessage.value = "Something went wrong";
+//     } finally {
+//       isLoading.value = false;
+//       isLoadingMore.value = false;
+//     }
+//   }
 
-  /// load more when scrolling
-  void loadMore() {
-    if (!isLoadingMore.value && hasMore) {
-      fetchUsers();
-    }
-  }
-}
+//   /// load more when scrolling
+//   void loadMore() {
+//     if (!isLoadingMore.value && hasMore) {
+//       fetchUsers();
+//     }
+//   }
+// }

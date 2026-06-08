@@ -4,13 +4,29 @@ class ApiEndpoints {
   static const String baseUrl = "https://loyaltydevapi.xpulsar.tech/api/v1/";
 
   static const String loginUrl = "${baseUrl}admin/login";
-  static const String refreshTokenUrl = "${baseUrl}admin/getAccessToken";
-  static const String getAllUsers = "${baseUrl}admin/user";
-  
-  /// Dynamic endpoint
-  static String getUser(String cardcode) {
-    return "${baseUrl}admin/user/$cardcode";
+  static const String logoutUrl = "${baseUrl}admin/logout";
+  static const String refreshTokenUrl = "${baseUrl}admin/get-access-token";
+
+  static String userLookUp(String identifier) {
+    return "${baseUrl}admin/userLookUp?identifier=$identifier";
   }
 
-  static const String calculateBill = "${baseUrl}admin/points/calculate-bill";
+  static String rewardLookUp(String identifier) {
+    return "${baseUrl}admin/rewardLookUp?identifier=$identifier";
+  }
+
+  static String addVisits(int id) => "${baseUrl}admin/addVisit/$id";
+
+  //static String addVisits(int id) => "${baseUrl}admin/addVisit/$id";
+
+  static const String redeemReward = "${baseUrl}admin/redeemReward";
+
+  // static const String getAllUsers = "${baseUrl}admin/user";
+
+  // /// Dynamic endpoint
+  // static String getUser(String cardcode) {
+  //   return "${baseUrl}admin/user/$cardcode";
+  // }
+
+  // static const String calculateBill = "${baseUrl}admin/points/calculate-bill";
 }

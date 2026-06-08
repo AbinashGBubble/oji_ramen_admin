@@ -1,10 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:loyalty_admin/Modules/Dashboard/dash_board_screen.dart';
-import 'package:loyalty_admin/Modules/Dashboard/sample_screens.dart';
-import 'package:loyalty_admin/constant/app_colors.dart';
-import 'package:loyalty_admin/constant/app_icons_constant.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:loyalty_admin/Modules/Dashboard/pwaWebview_screen.dart';
+import 'package:loyalty_admin/Modules/ScanQr/qr_screen.dart';
+import 'package:loyalty_admin/routes/app_routes.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+
+import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
+
+/// =============================
+/// COMMON BOTTOM BAR
+/// =============================
 class CommonBottomBar extends StatefulWidget {
   const CommonBottomBar({super.key});
 
@@ -13,50 +21,120 @@ class CommonBottomBar extends StatefulWidget {
 }
 
 class _CommonBottomBarState extends State<CommonBottomBar> {
-  int _selectedIndex = 0;
+  int selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    DashBoardScreen(),
-    UserWebViewPage(url: "https://dev.d35eu7io5hegid.amplifyapp.com/users/?app_code=REST-7A9C21FE&app_key=B1F9C8A22D8F8BC19D7E10CE39129FB2& authorization=ggg",),
-    // RedeemView(),
-    // MenuView(),
-    // MoreView(),
+  final List<Widget> pages = [
+    /// DASHBOARD
+    const PwaWebViewScreen(
+      title: "Dashboard",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com/",
+    ),
+
+    /// USERS
+    const PwaWebViewScreen(
+      title: "Users",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com/users",
+    ),
+
+    /// ANALYTICS
+    const PwaWebViewScreen(
+      title: "Analytics",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com/analytics",
+    ),
+
+    /// SETTINGS
+    const PwaWebViewScreen(
+      title: "Settings",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com/settings",
+    ),
   ];
-
-  void _onTabSelected(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(children: [_pages[_selectedIndex]]),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0x1A000000),
-              offset: const Offset(0, -2),
-              blurRadius: 15,
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F7F7),
+      
+        body: IndexedStack(index: selectedIndex, children: pages),
+      
+        //floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: GestureDetector(
+          onTap: () {
+            Get.offNamed(AppRoutes.scanQr);
+            // Get.to( ScanQrScreen()
+            // () => const PwaWebViewScreen(
+            //   title: "QR Scanner",
+            //   url: "https://master.d1qi4h2imco1od.amplifyapp.com/scan",
+            // ),
+            //);
+          },
+      
+          child: Container(
+            height: 72,
+            width: 72,
+      
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E7D32),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-          ],
+      
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.qr_code_2, color: Colors.white, size: 30),
+      
+                SizedBox(height: 2),
+      
+                Text(
+                  "QR",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: BottomAppBar(
-          color: Colors.transparent,
-          elevation: 0,
-          notchMargin: 8.0,
+      
+        bottomNavigationBar: Container(
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      
+          decoration: BoxDecoration(
+            color: Colors.white,
+      
+            borderRadius: BorderRadius.circular(40),
+      
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+      
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(IconConsts.home, 0),
-              _buildNavItem(IconConsts.user, 1),
-              _buildNavItem(IconConsts.analytics, 2),
-              _buildNavItem(IconConsts.menuOutlets, 3),
-              _buildNavItem(IconConsts.more, 3),
+              navItem(icon: Icons.home_rounded, label: "Home", index: 0),
+      
+              navItem(icon: Icons.people_alt_outlined, label: "Users", index: 1),
+      
+              //const SizedBox(width: 40),
+              navItem(icon: Icons.bar_chart_rounded, label: "Stats", index: 2),
+      
+              navItem(icon: Icons.settings_outlined, label: "Settings", index: 3),
             ],
           ),
         ),
@@ -64,36 +142,38 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
     );
   }
 
-  void _openWebView(BuildContext context, String url) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SafeArea(
-          child: Scaffold(
-            //appBar: AppBar(title: const Text("WebView")),
-            body: WebViewWidget(
-              controller: WebViewController()
-                ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..loadRequest(Uri.parse(url)),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(String icon, int index) {
-    final isSelected = index == _selectedIndex;
+  Widget navItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final isSelected = selectedIndex == index;
 
     return GestureDetector(
-      onTap: () => _onTabSelected(index),
+      onTap: () {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image(
-            image: AssetImage(icon),
-            height: 24,
-            color: isSelected ? const Color(0xFFFF7C0A) : Colors.black,
+          Icon(
+            icon,
+            size: 26,
+            color: isSelected ? const Color(0xFFD7425B) : Colors.grey,
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isSelected ? const Color(0xFFD7425B) : Colors.grey,
+            ),
           ),
         ],
       ),

@@ -1,6 +1,6 @@
 class IconConsts{
 
-  static const loginBackground = "assets/LoginBackground.png";
+  static const loginBackground = "assets/icons/LoginBackground.png";
 
   //Quick actions icons
   static const qrCodeScan = "assets/icons/qr-code.png";

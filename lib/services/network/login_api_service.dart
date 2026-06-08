@@ -10,7 +10,7 @@ class LoginApiService extends BaseApiService {
   }) {
     return post(
       ApiEndpoints.loginUrl,
-      {
+      body: {
         "email": email,
         "password": password,
       },

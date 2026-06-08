@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:loyalty_admin/services/base_api/base_api_service.dart';
 import 'package:loyalty_admin/services/config/api_endpoints.dart';
@@ -18,12 +17,12 @@ class RefreshTokenApiService extends BaseApiService {
         return null;
       }
 
-      final headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'x-app-code': dotenv.env['x-app-code'] ?? '',
-        'x-api-key': dotenv.env['x-api-key'] ?? '',
-      };
+      // final headers = {
+      //   'Accept': 'application/json',
+      //   'Content-Type': 'application/json',
+      //   'x-app-code': dotenv.env['x-app-code'] ?? '',
+      //   'x-api-key': dotenv.env['x-api-key'] ?? '',
+      // };
 
       final body = jsonEncode({
         "refresh_token": refreshToken,
@@ -33,7 +32,7 @@ class RefreshTokenApiService extends BaseApiService {
 
       final response = await http.post(
         Uri.parse(ApiEndpoints.refreshTokenUrl),
-        headers: headers,
+        //headers: headers,
         body: body,
       );
 

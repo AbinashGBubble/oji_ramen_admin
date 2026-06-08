@@ -198,18 +198,18 @@ abstract class BaseApiService {
       );
 
   Future<Map<String, dynamic>?> post(
-    String url,
-    Map<String, dynamic> body, {
-    bool authRequired = true,
-    Map<String, String>? extraHeaders,
-  }) =>
-      _request(
-        url: url,
-        method: HttpMethod.post,
-        body: body,
-        authRequired: authRequired,
-        extraHeaders: extraHeaders,
-      );
+  String url, {
+  Map<String, dynamic>? body,
+  bool authRequired = true,
+  Map<String, String>? extraHeaders,
+}) =>
+    _request(
+      url: url,
+      method: HttpMethod.post,
+      body: body,
+      authRequired: authRequired,
+      extraHeaders: extraHeaders,
+    );
 
   Future<Map<String, dynamic>?> put(
     String url, {

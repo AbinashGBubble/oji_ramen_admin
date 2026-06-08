@@ -91,6 +91,7 @@ class LoginView extends StatelessWidget {
               //login button
               Gaps.h20,
               CommonButton(text: "Sign In", 
+              backgroundColor: Color(0xffD7425B),
               onPressed: () {
 
                 controller.loginUser();
