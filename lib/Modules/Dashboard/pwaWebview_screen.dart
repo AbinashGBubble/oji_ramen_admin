@@ -65,44 +65,43 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
         NavigationDelegate(
           onPageFinished: (url) async {
             await controller!.runJavaScript("""
+              localStorage.setItem(
+                'oji_token',
+                '$accessToken'
+              );
 
-localStorage.setItem(
-'oji_token',
-'$accessToken'
-);
+              localStorage.setItem(
+                'oji_refresh_token',
+                '$refreshToken'
+              );
 
-localStorage.setItem(
-'oji_refresh_token',
-'$refreshToken'
-);
+              localStorage.setItem(
+                'oji_user',
+                '$userJson'
+              );
 
-localStorage.setItem(
-'oji_user',
-'$userJson'
-);
+              if (
+              !localStorage.getItem(
+                '__flutter_reloaded'
+                )
+              ) {
 
-if (
-!localStorage.getItem(
-'__flutter_reloaded'
-)
-) {
+              localStorage.setItem(
+                '__flutter_reloaded',
+                '1'
+              );
 
-localStorage.setItem(
-'__flutter_reloaded',
-'1'
-);
+              window.location.reload();
 
-window.location.reload();
+              } else {
 
-} else {
+              localStorage.removeItem(
+                '__flutter_reloaded'
+              );
 
-localStorage.removeItem(
-'__flutter_reloaded'
-);
+              }
 
-}
-
-""");
+              """);
 
             debugPrint("PWA SESSION READY");
           },

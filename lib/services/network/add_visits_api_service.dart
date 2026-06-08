@@ -3,6 +3,6 @@ import 'package:loyalty_admin/services/config/api_endpoints.dart';
 
 class AddvisistsApiService extends BaseApiService {
   Future<Map<String, dynamic>?> addvisits({required int id}) {
-    return get(ApiEndpoints.addVisits(id), authRequired: true);
+    return post(ApiEndpoints.addVisits(id),body: {}, authRequired: true);
   }
 }

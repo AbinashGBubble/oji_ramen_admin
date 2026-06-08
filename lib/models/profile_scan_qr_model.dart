@@ -172,6 +172,31 @@ class ProfileLookupData {
           [],
     );
   }
+
+  ProfileLookupData copyWith({int? visits}) {
+    return ProfileLookupData(
+      id: id,
+      firstName: firstName,
+      lastName: lastName,
+      uid: uid,
+      email: email,
+      mobile: mobile,
+      dob: dob,
+      gender: gender,
+      countryCode: countryCode,
+      visits: visits ?? this.visits,
+      imgKey: imgKey,
+      phoneVerified: phoneVerified,
+      isActive: isActive,
+      isDeleted: isDeleted,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      userTiers: userTiers,
+      loginSessions: loginSessions,
+      activities: activities,
+      rewards: rewards,
+    );
+  }
 }
 
 class UserTierModel {

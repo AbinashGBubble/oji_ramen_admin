@@ -6,13 +6,26 @@ import 'package:loyalty_admin/Modules/ScanQr/scan_qr_controller.dart';
 import 'package:loyalty_admin/common/app_spacing.dart';
 import 'package:loyalty_admin/common/app_text_styles.dart';
 
-class EnterCodeManuallyScreen extends StatelessWidget {
+class EnterCodeManuallyScreen extends StatefulWidget {
   const EnterCodeManuallyScreen({super.key});
+
+  @override
+  State<EnterCodeManuallyScreen> createState() => _EnterCodeManuallyScreenState();
+}
+
+class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
+  final _uidController = TextEditingController();
+
+  @override
+  void dispose() {
+    _uidController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ScanQrController>();
-    final LoginController loginController = Get.put(LoginController());
+    //final LoginController loginController = Get.put(LoginController());
     //final loginController = Get.find<LoginController>();
 
     return Scaffold(
@@ -174,8 +187,7 @@ class EnterCodeManuallyScreen extends StatelessWidget {
 
                         onTap: () {
                           controller.isRedeem.value = false;
-
-                          controller.showData.value = false;
+                          // Don't clear profile data when switching back
                         },
                       ),
                     ),
@@ -190,8 +202,7 @@ class EnterCodeManuallyScreen extends StatelessWidget {
 
                         onTap: () {
                           controller.isRedeem.value = true;
-
-                          controller.showData.value = false;
+                          // Don't clear reward data when switching back
                         },
                       ),
                     ),
@@ -241,9 +252,7 @@ class EnterCodeManuallyScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: TextField(
-                            // controller:
-                            // controller
-                            //     .textController,
+                            controller: _uidController,
                             decoration: InputDecoration(
                               hintText: "Enter UID",
 
@@ -282,8 +291,11 @@ class EnterCodeManuallyScreen extends StatelessWidget {
                             onPressed: controller.isLoading.value
                                 ? null
                                 : () async {
-                                    // await controller
-                                    //     .manualSearch();
+                                    final uid = _uidController.text.trim();
+                                    if (uid.isEmpty) return;
+                                    // Build a QR-compatible JSON so handleQrCode works for both paths
+                                    final qrType = controller.isRedeem.value ? 'rewards' : 'profile';
+                                    await controller.handleQrCode('{"uid":"$uid","type":"$qrType"}');
                                   },
 
                             icon: controller.isLoading.value
@@ -317,7 +329,11 @@ class EnterCodeManuallyScreen extends StatelessWidget {
               //----------------------------------
               // DATA CARD
               //----------------------------------
-              if (controller.showData.value) buildDataCard(controller),
+              if (!controller.isRedeem.value && controller.showProfileData.value)
+                buildDataCard(controller),
+
+              if (controller.isRedeem.value && controller.showRewardData.value)
+                buildDataCard(controller),
             ],
           ),
         );
@@ -493,33 +509,53 @@ class EnterCodeManuallyScreen extends StatelessWidget {
 
                       const SizedBox(height: 20),
 
-                      SizedBox(
-                        height: 52,
+                      Obx(() {
+                        final isDisabled = controller.isAddingVisit.value ||
+                            controller.visitAdded.value;
 
-                        child: ElevatedButton(
-                          onPressed: () {},
+                        return SizedBox(
+                          height: 52,
 
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD94B63),
+                          width: double.infinity,
 
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                          child: ElevatedButton(
+                            onPressed: isDisabled
+                                ? null
+                                : () => controller.addVisit(),
+
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDisabled
+                                  ? Colors.grey.shade400
+                                  : const Color(0xFFD94B63),
+
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
+
+                            child: controller.isAddingVisit.value
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    controller.visitAdded.value
+                                        ? "✓ Visit Added"
+                                        : "+ Add 1 Visit",
+
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
                           ),
-
-                          child: const Text(
-                            "+ Add 1 Visit",
-
-                            style: TextStyle(
-                              color: Colors.white,
-
-                              fontWeight: FontWeight.w700,
-
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -608,7 +644,7 @@ class EnterCodeManuallyScreen extends StatelessWidget {
                       //     : const Icon(Icons.check_circle, color: Colors.white),
 
                       label: Text(
-                       "Confirm Visits",
+                       "Confirm Redeem",
 
                         style: const TextStyle(
                           color: Colors.white,

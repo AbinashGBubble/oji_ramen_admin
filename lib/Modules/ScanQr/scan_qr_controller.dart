@@ -30,11 +30,18 @@ class ScanQrController extends GetxController {
 
   final RxBool isRedeem = false.obs;
 
-  final RxBool showData = false.obs;
+  /// FIX #1 — separate show flags so switching tabs never hides existing data
+  final RxBool showProfileData = false.obs;
+
+  final RxBool showRewardData = false.obs;
 
   final RxBool isAddingVisit = false.obs;
 
   final RxBool isRedeeming = false.obs;
+
+  /// FIX #2 — tracks whether a visit was already added for the current profile
+  /// Reset to false every time a new profile is loaded
+  final RxBool visitAdded = false.obs;
 
   //----------------------------------
   // PROFILE RESPONSE
@@ -55,21 +62,9 @@ class ScanQrController extends GetxController {
 
   Future<bool> handleQrCode(String rawQr) async {
     try {
-      //----------------------------------
-      // PREVENT MULTIPLE CALLS
-      //----------------------------------
-
-      if (isLoading.value) {
-        return false;
-      }
+      if (isLoading.value) return false;
 
       isLoading.value = true;
-
-      showData.value = false;
-
-      //----------------------------------
-      // DECODE QR
-      //----------------------------------
 
       final decoded = jsonDecode(rawQr);
 
@@ -77,18 +72,12 @@ class ScanQrController extends GetxController {
 
       final String type = decoded["type"] ?? '';
 
-      //----------------------------------
-      // VALIDATION
-      //----------------------------------
-
       if (uid.isEmpty || type.isEmpty) {
         Get.snackbar("Error", "Invalid QR");
-
         return false;
       }
 
       debugPrint("QR UID => $uid");
-
       debugPrint("QR TYPE => $type");
 
       //----------------------------------
@@ -104,25 +93,28 @@ class ScanQrController extends GetxController {
 
         if (response == null) {
           Get.snackbar("Error", "User not found");
-
           return false;
         }
 
         if (response['success'] == true) {
           profileResponse.value = ProfileLookupResponse.fromJson(response);
 
-          showData.value = true;
+          // Reset visit button for new profile
+          visitAdded.value = false;
+
+          showProfileData.value = true;
 
           return true;
         }
 
         Get.snackbar("Error", response['message'] ?? "User not found");
-
         return false;
       }
+
       //----------------------------------
       // REWARD QR
       //----------------------------------
+
       else if (type == "rewards") {
         isRedeem.value = true;
 
@@ -132,35 +124,32 @@ class ScanQrController extends GetxController {
 
         if (response == null) {
           Get.snackbar("Error", "Reward not found");
-
           return false;
         }
 
         if (response['success'] == true) {
           rewardResponse.value = RewardLookupResponse.fromJson(response);
 
-          showData.value = true;
+          showRewardData.value = true;
 
           return true;
         }
 
         Get.snackbar("Error", response['message'] ?? "Reward not found");
-
         return false;
       }
+
       //----------------------------------
       // INVALID TYPE
       //----------------------------------
+
       else {
         Get.snackbar("Error", "Invalid QR type");
-
         return false;
       }
     } catch (e) {
       debugPrint("QR ERROR => $e");
-
       Get.snackbar("Error", "Invalid QR format");
-
       return false;
     } finally {
       isLoading.value = false;
@@ -211,113 +200,120 @@ class ScanQrController extends GetxController {
 
   Future<void> addVisit() async {
     try {
-      //----------------------------------
-      // NULL CHECK
-      //----------------------------------
-
       if (profileData == null) {
         Get.snackbar("Error", "Profile not found");
-
         return;
       }
 
-      //----------------------------------
-      // START LOADING
-      //----------------------------------
-
       isAddingVisit.value = true;
-
-      //----------------------------------
-      // API CALL
-      //----------------------------------
 
       final response = await _addVisitsApi.addvisits(id: profileData!.id);
 
       debugPrint("ADD VISIT RESPONSE => $response");
 
-      //----------------------------------
-      // SUCCESS
-      //----------------------------------
-
       if (response?['success'] == true) {
-        //----------------------------------
-        // PARSE RESPONSE
-        //----------------------------------
-
         final parsed = AddVisitResponse.fromJson(response!);
-
-        //----------------------------------
-        // UPDATED VISITS
-        //----------------------------------
 
         final updatedVisits = parsed.data.user.visits;
 
-        //----------------------------------
-        // UPDATE LOCAL PROFILE
-        //----------------------------------
-
-        if (profileResponse.value != null) {
-          //profileResponse.value!.data!.visits = updatedVisits;
-
-          profileResponse.refresh();
+        // FIX: use copyWith instead of assigning to final field
+        if (profileResponse.value != null &&
+            profileResponse.value!.data != null) {
+          profileResponse.value = ProfileLookupResponse(
+            success: profileResponse.value!.success,
+            message: profileResponse.value!.message,
+            data: profileResponse.value!.data!.copyWith(
+              visits: updatedVisits,
+            ),
+          );
         }
 
-        //----------------------------------
-        // REFRESH UI
-        //----------------------------------
-
-        showData.refresh();
-
-        //----------------------------------
-        // SUCCESS
-        //----------------------------------
+        // FIX: mark visit as done — disables the button
+        visitAdded.value = true;
 
         Get.snackbar(
           "Success",
-
           parsed.message,
-
           snackPosition: SnackPosition.BOTTOM,
         );
-      }
-      //----------------------------------
-      // FAILED
-      //----------------------------------
-      else {
+      } else {
         Get.snackbar(
           "Error",
-
           response?['message'] ?? "Failed to add visit",
-
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } catch (e) {
       debugPrint("ADD VISIT ERROR => $e");
-
       Get.snackbar(
         "Error",
         "Something went wrong",
-
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
-      //----------------------------------
-      // STOP LOADING
-      //----------------------------------
-
       isAddingVisit.value = false;
     }
   }
 
+  //----------------------------------
+  // CONFIRM REWARD REDEEM
+  //----------------------------------
+
+  Future<void> confirmReward() async {
+    try {
+      if (rewardData == null) {
+        Get.snackbar("Error", "Reward not found");
+        return;
+      }
+
+      isRedeeming.value = true;
+
+      final response =
+          await _rewardApi.rewardLookUp(identifier: rewardData!.redeemCode);
+
+      if (response?['success'] == true) {
+        showRewardData.value = false;
+        rewardResponse.value = null;
+        Get.snackbar(
+          "Success",
+          "Reward redeemed successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar(
+          "Error",
+          response?['message'] ?? "Failed to redeem reward",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      debugPrint("CONFIRM REWARD ERROR => $e");
+      Get.snackbar(
+        "Error",
+        "Something went wrong",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isRedeeming.value = false;
+    }
+  }
+
+  //----------------------------------
+  // RESET (called on logout / re-scan)
+  //----------------------------------
+
+  void reset() {
+    profileResponse.value = null;
+    rewardResponse.value = null;
+    showProfileData.value = false;
+    showRewardData.value = false;
+    visitAdded.value = false;
+    isRedeem.value = false;
+  }
+
   @override
   void onClose() {
-    profileResponse.value = null;
-
-    rewardResponse.value = null;
-
-    showData.value = false;
-
+    reset();
     super.onClose();
   }
 }

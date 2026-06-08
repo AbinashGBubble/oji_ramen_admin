@@ -33,6 +33,8 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
   bool hasNavigated = false;
 
+  bool _isCameraStarting = false;
+
   // QR DETECT
 
   Future<void> onDetect(BarcodeCapture capture) async {
@@ -60,7 +62,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
       if (success) {
         isNavigating = true;
 
-        Get.offAll(() => const EnterCodeManuallyScreen());
+        Get.toNamed(AppRoutes.enterManually);
 
         return;
       }
@@ -68,7 +70,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
       isProcessing = false;
 
       if (mounted) {
-        await controller.start();
+        await _safeStartCamera();
       }
     } catch (e) {
       debugPrint("SCAN ERROR => $e");
@@ -76,8 +78,21 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
       isProcessing = false;
 
       if (mounted) {
-        await controller.start();
+        await _safeStartCamera();
       }
+    }
+  }
+
+  /// Safely restarts the camera, ignoring "still initializing" errors
+  Future<void> _safeStartCamera() async {
+    if (_isCameraStarting) return;
+    _isCameraStarting = true;
+    try {
+      await controller.start();
+    } catch (e) {
+      debugPrint("Camera start skipped: \$e");
+    } finally {
+      _isCameraStarting = false;
     }
   }
 
@@ -292,7 +307,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
                           await controller.stop();
 
-                          Get.off(() => const EnterCodeManuallyScreen());
+                          Get.toNamed(AppRoutes.enterManually);
                         },
 
                         style: ElevatedButton.styleFrom(
@@ -307,12 +322,9 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
                         label: const Text(
                           "Enter Code Manually",
-
                           style: TextStyle(
                             color: Colors.white,
-
                             fontSize: 18,
-
                             fontWeight: FontWeight.w600,
                           ),
                         ),

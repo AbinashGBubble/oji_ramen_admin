@@ -1,13 +1,11 @@
 import 'package:get/get.dart';
 import 'package:loyalty_admin/Modules/Auth/login_binding.dart';
-
-// Import screens + bindings
 import 'package:loyalty_admin/Modules/Auth/login_view.dart';
 import 'package:loyalty_admin/Modules/Dashboard/common_bottom_bar.dart';
-import 'package:loyalty_admin/Modules/ScanQr/earn_redeem_binding.dart';
-import 'package:loyalty_admin/Modules/ScanQr/earn_redeem_screen.dart';
 import 'package:loyalty_admin/Modules/ScanQr/qr_scanner_binding.dart';
 import 'package:loyalty_admin/Modules/ScanQr/qr_screen.dart';
+import 'package:loyalty_admin/Modules/redeem/enter_manually_binding.dart';
+import 'package:loyalty_admin/Modules/redeem/enter_manually_screen.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 
 class AppPages {
@@ -20,14 +18,19 @@ class AppPages {
 
     GetPage(
       name: AppRoutes.home,
-      page: () => CommonBottomBar(),
-      //binding: LoginBinding(),
+      page: () => const CommonBottomBar(),
     ),
 
     GetPage(
       name: AppRoutes.scanQr,
-      page: () => ScanQrScreen(),
+      page: () => const ScanQrScreen(),
       binding: QrScannerBinding(),
+    ),
+
+    GetPage(
+      name: AppRoutes.enterManually,
+      page: () => const EnterCodeManuallyScreen(),
+      binding: EnterManuallyBinding(),
     ),
   ];
 }

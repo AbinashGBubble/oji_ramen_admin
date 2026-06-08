@@ -60,7 +60,7 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         //floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: GestureDetector(
           onTap: () {
-            Get.offNamed(AppRoutes.scanQr);
+            Get.toNamed(AppRoutes.scanQr);
             // Get.to( ScanQrScreen()
             // () => const PwaWebViewScreen(
             //   title: "QR Scanner",
