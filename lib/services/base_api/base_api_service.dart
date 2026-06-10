@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:loyalty_admin/services/network/refresh_token_api_service.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
@@ -16,8 +15,6 @@ abstract class BaseApiService {
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'x-app-code': dotenv.env['x-app-code'] ?? '',
-      'x-api-key': dotenv.env['x-api-key'] ?? '',
     };
 
     if (authRequired) {
