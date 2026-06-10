@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/ScanQr/scan_qr_controller.dart';
+import 'package:loyalty_admin/modules/ScanQr/scan_qr_controller.dart';
 
 class QrScannerBinding extends Bindings {
   @override

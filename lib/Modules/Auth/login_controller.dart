@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/Dashboard/common_bottom_bar.dart';
-import 'package:loyalty_admin/Modules/Dashboard/pwaWebview_screen.dart';
+import 'package:loyalty_admin/modules/Dashboard/common_bottom_bar.dart';
+import 'package:loyalty_admin/modules/Dashboard/pwaWebview_screen.dart';
 import 'package:loyalty_admin/models/login_response_model.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 import 'package:loyalty_admin/services/network/login_api_service.dart';

@@ -163,8 +163,8 @@ class ScanQrController extends GetxController {
   ProfileLookupData? get profileData => profileResponse.value?.data;
 
   String get profileName =>
-      "${profileData?.firstName ?? ''} "
-      "${profileData?.lastName ?? ''}";
+    profileData?.name ??
+    "${profileData?.firstName ?? ''} ${profileData?.lastName ?? ''}".trim();
 
   String get profileUid => profileData?.uid ?? '';
 
@@ -188,8 +188,8 @@ class ScanQrController extends GetxController {
   String get rewardName => rewardData?.reward.name ?? '';
 
   String get rewardUser =>
-      "${rewardData?.user.firstName ?? ''} "
-      "${rewardData?.user.lastName ?? ''}";
+    rewardData?.user.name ??
+    "${rewardData?.user.firstName ?? ''} ${rewardData?.user.lastName ?? ''}".trim();
 
   String get rewardTier =>
       rewardData?.user.userTiers.firstOrNull?.tier.name ?? '-';
@@ -313,7 +313,6 @@ class ScanQrController extends GetxController {
 
   @override
   void onClose() {
-    reset();
     super.onClose();
   }
 }

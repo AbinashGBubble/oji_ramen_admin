@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/Auth/login_controller.dart';
+import 'package:loyalty_admin/modules/Auth/login_controller.dart';
 import 'package:loyalty_admin/common/app_spacing.dart';
 import 'package:loyalty_admin/common/app_text_styles.dart';
 import 'package:loyalty_admin/common/common_button.dart';

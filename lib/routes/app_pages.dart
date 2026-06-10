@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/Auth/login_binding.dart';
-import 'package:loyalty_admin/Modules/Auth/login_view.dart';
-import 'package:loyalty_admin/Modules/Dashboard/common_bottom_bar.dart';
-import 'package:loyalty_admin/Modules/ScanQr/qr_scanner_binding.dart';
-import 'package:loyalty_admin/Modules/ScanQr/qr_screen.dart';
-import 'package:loyalty_admin/Modules/redeem/enter_manually_binding.dart';
-import 'package:loyalty_admin/Modules/redeem/enter_manually_screen.dart';
+import 'package:loyalty_admin/modules/Auth/login_binding.dart';
+import 'package:loyalty_admin/modules/Auth/login_view.dart';
+import 'package:loyalty_admin/modules/Dashboard/common_bottom_bar.dart';
+import 'package:loyalty_admin/modules/ScanQr/qr_scanner_binding.dart';
+import 'package:loyalty_admin/modules/ScanQr/qr_screen.dart';
+import 'package:loyalty_admin/modules/redeem/enter_manually_binding.dart';
+import 'package:loyalty_admin/modules/redeem/enter_manually_screen.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 
 class AppPages {

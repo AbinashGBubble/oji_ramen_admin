@@ -195,6 +195,8 @@ class RewardLookupReward {
 class RewardLookupUser {
   final int id;
 
+  final String name;
+
   final String firstName;
 
   final String lastName;
@@ -234,6 +236,8 @@ class RewardLookupUser {
 
     required this.lastName,
 
+    required this.name,
+
     required this.uid,
 
     required this.email,
@@ -270,6 +274,8 @@ class RewardLookupUser {
       firstName: json["firstName"] ?? '',
 
       lastName: json["lastName"] ?? '',
+
+      name: json["name"] ?? '',
 
       uid: json["uid"] ?? '',
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/redeem/enter_manually_screen.dart';
+import 'package:loyalty_admin/modules/redeem/enter_manually_screen.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:loyalty_admin/Modules/ScanQr/scan_qr_controller.dart';
+import 'package:loyalty_admin/modules/ScanQr/scan_qr_controller.dart';
 
 class ScanQrScreen extends StatefulWidget {
   const ScanQrScreen({super.key});

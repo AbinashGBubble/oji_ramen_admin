@@ -29,6 +29,8 @@ class ProfileLookupResponse {
 class ProfileLookupData {
   final int id;
 
+  final String? name;
+
   final String firstName;
 
   final String lastName;
@@ -69,6 +71,8 @@ class ProfileLookupData {
 
   ProfileLookupData({
     required this.id,
+
+    this.name,
 
     required this.firstName,
 
@@ -112,6 +116,8 @@ class ProfileLookupData {
   factory ProfileLookupData.fromJson(Map<String, dynamic> json) {
     return ProfileLookupData(
       id: json["id"] ?? 0,
+
+      name: json["name"] ?? '',
 
       firstName: json["firstName"] ?? '',
 
@@ -176,6 +182,7 @@ class ProfileLookupData {
   ProfileLookupData copyWith({int? visits}) {
     return ProfileLookupData(
       id: id,
+      name: name,
       firstName: firstName,
       lastName: lastName,
       uid: uid,

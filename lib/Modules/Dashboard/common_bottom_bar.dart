@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:loyalty_admin/Modules/Dashboard/pwaWebview_screen.dart';
-import 'package:loyalty_admin/Modules/ScanQr/qr_screen.dart';
+import 'package:loyalty_admin/modules/Dashboard/pwaWebview_screen.dart';
+import 'package:loyalty_admin/modules/ScanQr/qr_screen.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
