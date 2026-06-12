@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:loyalty_admin/modules/Dashboard/common_bottom_bar.dart';
-import 'package:loyalty_admin/modules/Dashboard/pwaWebview_screen.dart';
 import 'package:loyalty_admin/models/login_response_model.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 import 'package:loyalty_admin/services/network/login_api_service.dart';
@@ -25,15 +24,7 @@ class LoginController extends GetxController {
 
   Future<void> checkLogin() async {
     final token = await SecureStorageService.getAccessToken();
-
     if (token != null && token.isNotEmpty) {
-      //Get.offAllNamed(AppRoutes.home);
-      // Get.offAll(
-      //   () => const PwaWebViewScreen(
-      //     title: "Dashboard",
-      //     url: "https://master.d1qi4h2imco1od.amplifyapp.com/",
-      //   ),
-      //);
       Get.offAll(() => const CommonBottomBar());
     }
   }
@@ -42,11 +33,6 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      // Map<String, String> data = {
-      //   "email": emailController.text,
-      //   "password": passWordController.text,
-      // };
-
       final jsonResponse = await api.login(
         email: emailController.text,
         password: passWordController.text,
@@ -58,11 +44,9 @@ class LoginController extends GetxController {
       }
 
       final result = LoginResponse.fromJson(jsonResponse);
-
       debugPrint("Admin login response: ${result.message}");
 
       if (result.success == true) {
-        /// Extract tokens
         final accessToken = result.data?.accessToken;
         final refreshToken = result.data?.refreshToken;
 
@@ -71,13 +55,11 @@ class LoginController extends GetxController {
           return;
         }
 
-        /// Save tokens securely
         await SecureStorageService.saveTokens(
           accessToken: accessToken,
           refreshToken: refreshToken,
         );
 
-        /// Save admin user for WebView session
         final admin = result.data!.admin;
         await SecureStorageService.saveUser({
           'id': admin.id.toString(),
@@ -87,17 +69,6 @@ class LoginController extends GetxController {
           if (admin.roleId != null) 'roleId': admin.roleId,
         });
 
-        debugPrint("Access Token Saved: $accessToken");
-        debugPrint("Refresh Token Saved: $refreshToken");
-
-        /// Navigate to home
-        // Get.offAllNamed(AppRoutes.home);
-        // Get.offAll(
-        //   () => const PwaWebViewScreen(
-        //     title: "Dashboard",
-        //     url: "https://master.d1qi4h2imco1od.amplifyapp.com/",
-        //   ),
-        // );
         Get.offAll(() => const CommonBottomBar());
       } else {
         Get.rawSnackbar(
@@ -117,41 +88,19 @@ class LoginController extends GetxController {
       debugPrint("Login error: $e");
       Get.snackbar("Error", "Unexpected error occurred");
     } finally {
-      isLoading.value = false;
+      if (!isClosed) isLoading.value = false;
     }
   }
 
-  // LOGOUT USER
-  Future<void> logOut() async {
+  static Future<void> handleLogout() async {
     try {
-      isLoading.value = true;
-
-      final response = await _api.logOut();
-
-      if (response?['success'] == true) {
-        debugPrint(
-          "Logout success : ${response?['message']}",
-        );
-      } else {
-        debugPrint(
-          "Logout failed : ${response?['message']}",
-        );
-      }
-
-      _forceLogout();
+      await LogoutApiService().logOut();
     } catch (e) {
-      debugPrint("Logout error : $e");
-
-      _forceLogout();
+      debugPrint("Logout error: $e");
     } finally {
-      isLoading.value = false;
+      await SecureStorageService.clearTokens();
+      Get.offAllNamed(AppRoutes.login);
     }
-  }
-
-  Future<void> _forceLogout() async {
-    await SecureStorageService.clearTokens();
-
-    Get.offAllNamed(AppRoutes.login);
   }
 
   @override

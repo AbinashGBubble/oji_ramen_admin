@@ -16,8 +16,12 @@ class PwaWebViewScreen extends StatefulWidget {
   State<PwaWebViewScreen> createState() => _PwaWebViewScreenState();
 }
 
-class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
+class _PwaWebViewScreenState extends State<PwaWebViewScreen>
+    with AutomaticKeepAliveClientMixin {
   WebViewController? controller;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -27,21 +31,18 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
 
   Future<void> initWebView() async {
     final accessToken = await SecureStorageService.getAccessToken();
-
     final refreshToken = await SecureStorageService.getRefreshToken();
-
     final userMap = await SecureStorageService.getUser();
 
-    final userJson = userMap != null
-        ? jsonEncode(userMap).replaceAll("'", "\\'")
-        : '{}';
+    final userJson =
+        userMap != null ? jsonEncode(userMap).replaceAll("'", "\\'") : '{}';
 
     final cookieManager = WebViewCookieManager();
 
-    // clear old cookies
+    // Clear old cookies
     await cookieManager.clearCookies();
 
-    // access token cookie
+    // Set access token cookie
     await cookieManager.setCookie(
       WebViewCookie(
         name: 'oji_token',
@@ -50,7 +51,7 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
       ),
     );
 
-    // refresh token cookie
+    // Set refresh token cookie
     await cookieManager.setCookie(
       WebViewCookie(
         name: 'oji_refresh_token',
@@ -65,52 +66,22 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
         NavigationDelegate(
           onPageFinished: (url) async {
             await controller!.runJavaScript("""
-              localStorage.setItem(
-                'oji_token',
-                '$accessToken'
-              );
+              localStorage.setItem('oji_token', '$accessToken');
+              localStorage.setItem('oji_refresh_token', '$refreshToken');
+              localStorage.setItem('oji_user', '$userJson');
 
-              localStorage.setItem(
-                'oji_refresh_token',
-                '$refreshToken'
-              );
-
-              localStorage.setItem(
-                'oji_user',
-                '$userJson'
-              );
-
-              if (
-              !localStorage.getItem(
-                '__flutter_reloaded'
-                )
-              ) {
-
-              localStorage.setItem(
-                '__flutter_reloaded',
-                '1'
-              );
-
-              window.location.reload();
-
+              if (!localStorage.getItem('__flutter_reloaded')) {
+                localStorage.setItem('__flutter_reloaded', '1');
+                window.location.reload();
               } else {
-
-              localStorage.removeItem(
-                '__flutter_reloaded'
-              );
-
+                localStorage.removeItem('__flutter_reloaded');
               }
+            """);
 
-              """);
-
-            debugPrint("PWA SESSION READY");
+            debugPrint("PWA SESSION READY — ${widget.title}");
           },
-
           onWebResourceError: (error) {
-            debugPrint(
-              "WEB ERROR => "
-              "${error.description}",
-            );
+            debugPrint("WEB ERROR [${widget.title}] => ${error.description}");
           },
         ),
       );
@@ -124,12 +95,11 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      //appBar: AppBar(title: Text(widget.title)),
+    // super.build required by AutomaticKeepAliveClientMixin
+    super.build(context);
 
-      body: controller == null
-          ? const Center(child: CircularProgressIndicator())
-          : WebViewWidget(controller: controller!),
-    );
+    return controller == null
+        ? const Center(child: CircularProgressIndicator())
+        : WebViewWidget(controller: controller!);
   }
 }

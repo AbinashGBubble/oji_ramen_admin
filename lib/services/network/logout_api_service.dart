@@ -4,7 +4,7 @@ import 'package:loyalty_admin/services/config/api_endpoints.dart';
 class LogoutApiService extends BaseApiService {
   Future<Map<String, dynamic>?> logOut() {
     return post(
-      ApiEndpoints.loginUrl,
+      ApiEndpoints.logoutUrl,
       authRequired: true,
     );
   }

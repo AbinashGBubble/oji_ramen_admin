@@ -4,7 +4,6 @@ import 'package:loyalty_admin/modules/Auth/login_controller.dart';
 class LoginBinding extends Bindings {
   @override
   void dependencies() {
-    print("🔥 LoginBinding executed!");
-    Get.lazyPut<LoginController>(() => LoginController());
+    Get.put<LoginController>(LoginController());
   }
 }
