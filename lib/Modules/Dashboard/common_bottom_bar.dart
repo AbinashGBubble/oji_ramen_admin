@@ -19,22 +19,30 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   String adminName = '';
   String adminEmail = '';
 
-  final List<Widget> pages = [
-    const PwaWebViewScreen(
+  // Only load Dashboard on startup; other tabs load on first visit.
+  // This prevents all 4 WebViews from mounting simultaneously and racing
+  // on the shared localStorage / cookie store for the same origin.
+  final Set<int> _visitedIndices = {0};
+
+  static const List<({String title, String url})> _pageConfig = [
+    (
       title: "Dashboard",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com?source=flutter",
     ),
-    const PwaWebViewScreen(
+    (
       title: "Users",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/users",
+      url:
+          "https://master.d1qi4h2imco1od.amplifyapp.com/users?source=flutter",
     ),
-    const PwaWebViewScreen(
+    (
       title: "Analytics",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/analytics",
+      url:
+          "https://master.d1qi4h2imco1od.amplifyapp.com/analytics?source=flutter",
     ),
-    const PwaWebViewScreen(
+    (
       title: "Settings",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/settings",
+      url:
+          "https://master.d1qi4h2imco1od.amplifyapp.com/settings?source=flutter",
     ),
   ];
 
@@ -242,7 +250,14 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         ),
       ),
 
-      body: IndexedStack(index: selectedIndex, children: pages),
+      body: IndexedStack(
+        index: selectedIndex,
+        children: List.generate(_pageConfig.length, (i) {
+          if (!_visitedIndices.contains(i)) return const SizedBox.shrink();
+          final cfg = _pageConfig[i];
+          return PwaWebViewScreen(title: cfg.title, url: cfg.url);
+        }),
+      ),
 
       floatingActionButton: GestureDetector(
         onTap: () => Get.toNamed(AppRoutes.scanQr),
@@ -314,7 +329,10 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   }) {
     final isSelected = selectedIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => selectedIndex = index),
+      onTap: () => setState(() {
+        selectedIndex = index;
+        _visitedIndices.add(index);
+      }),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

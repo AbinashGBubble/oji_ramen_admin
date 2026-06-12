@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
 
+import 'package:loyalty_admin/services/config/api_endpoints.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
 
 class PwaWebViewScreen extends StatefulWidget {
@@ -23,42 +24,88 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
   @override
   bool get wantKeepAlive => true;
 
+  // Unique per-page reload flag so concurrent WebViews sharing the same
+  // origin localStorage don't consume each other's reload signal.
+  String get _reloadKey =>
+      '__flutter_reloaded_${widget.title.replaceAll(' ', '_').toLowerCase()}';
+
   @override
   void initState() {
     super.initState();
     initWebView();
   }
 
+  /// Returns true if [perms] is a non-null, non-array object — the format
+  /// the web app expects for its RolePermMap.
+  bool _isValidPermMap(dynamic perms) {
+    return perms != null && perms is Map && perms.isNotEmpty;
+  }
+
+  /// Fetches role permissions from the backend and returns a merged user map
+  /// with permissions in the format the web app expects:
+  ///   { "User": { view, create, edit, delete, export }, ... }
+  Future<Map<String, dynamic>> _withPermissions(
+    Map<String, dynamic> userMap,
+    String token,
+  ) async {
+    final roleId = userMap['roleId'];
+    if (roleId == null) return userMap;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}admin/role/$roleId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) return userMap;
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final roleData = (body['data'] ?? body) as Map<String, dynamic>;
+      final rolePermissions = roleData['rolePermissions'] as List<dynamic>?;
+
+      if (rolePermissions == null || rolePermissions.isEmpty) return userMap;
+
+      final permMap = <String, dynamic>{};
+      for (final rp in rolePermissions) {
+        final name = rp['permission']?['name'] as String?;
+        if (name == null) continue;
+        permMap[name] = {
+          'view': rp['can_view'] ?? false,
+          'create': rp['can_add'] ?? false,
+          'edit': rp['can_edit'] ?? false,
+          'delete': rp['can_delete'] ?? false,
+          'export': rp['can_export'] ?? false,
+        };
+      }
+
+      if (permMap.isEmpty) return userMap;
+
+      final updated = {...userMap, 'permissions': permMap};
+      await SecureStorageService.saveUser(updated);
+      return updated;
+    } catch (e) {
+      debugPrint('Permission fetch error [$widget.title]: $e');
+      return userMap;
+    }
+  }
+
   Future<void> initWebView() async {
     final accessToken = await SecureStorageService.getAccessToken();
     final refreshToken = await SecureStorageService.getRefreshToken();
-    final userMap = await SecureStorageService.getUser();
+    var userMap = await SecureStorageService.getUser() ?? {};
+
+    // Ensure permissions are in the correct RolePermMap format before the
+    // WebView loads, so the web app can use them on first render without
+    // needing an async fetch (which races with RoleGuard's redirect check).
+    if (accessToken != null && !_isValidPermMap(userMap['permissions'])) {
+      userMap = await _withPermissions(userMap, accessToken);
+    }
 
     final userJson =
-        userMap != null ? jsonEncode(userMap).replaceAll("'", "\\'") : '{}';
-
-    final cookieManager = WebViewCookieManager();
-
-    // Clear old cookies
-    await cookieManager.clearCookies();
-
-    // Set access token cookie
-    await cookieManager.setCookie(
-      WebViewCookie(
-        name: 'oji_token',
-        value: accessToken ?? '',
-        domain: 'master.d1qi4h2imco1od.amplifyapp.com',
-      ),
-    );
-
-    // Set refresh token cookie
-    await cookieManager.setCookie(
-      WebViewCookie(
-        name: 'oji_refresh_token',
-        value: refreshToken ?? '',
-        domain: 'master.d1qi4h2imco1od.amplifyapp.com',
-      ),
-    );
+        jsonEncode(userMap).replaceAll("'", "\\'").replaceAll('\n', '');
 
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -66,15 +113,16 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
         NavigationDelegate(
           onPageFinished: (url) async {
             await controller!.runJavaScript("""
-              localStorage.setItem('oji_token', '$accessToken');
-              localStorage.setItem('oji_refresh_token', '$refreshToken');
+              localStorage.setItem('oji_token', '${accessToken ?? ''}');
+              localStorage.setItem('oji_refresh_token', '${refreshToken ?? ''}');
               localStorage.setItem('oji_user', '$userJson');
 
-              if (!localStorage.getItem('__flutter_reloaded')) {
-                localStorage.setItem('__flutter_reloaded', '1');
+              var _rk = '$_reloadKey';
+              if (!localStorage.getItem(_rk)) {
+                localStorage.setItem(_rk, '1');
                 window.location.reload();
               } else {
-                localStorage.removeItem('__flutter_reloaded');
+                localStorage.removeItem(_rk);
               }
             """);
 
@@ -88,14 +136,11 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
 
     await controller!.loadRequest(Uri.parse(widget.url));
 
-    if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    // super.build required by AutomaticKeepAliveClientMixin
     super.build(context);
 
     return controller == null
