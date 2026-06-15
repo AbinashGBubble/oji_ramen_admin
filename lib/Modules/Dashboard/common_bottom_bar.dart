@@ -22,21 +22,24 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
 
   late PermissionController permissionController;
 
-  final List<Widget> pages = [
-    const PwaWebViewScreen(
+   final Set<int> _visitedIndices = {0};
+
+  static const List<({String title, String url})> _pageConfig = [
+    (
       title: "Dashboard",
       url: "https://master.d1qi4h2imco1od.amplifyapp.com?source=flutter",
     ),
-    const PwaWebViewScreen(
+    (
       title: "Users",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/users?source=flutter",
+      url:
+          "https://master.d1qi4h2imco1od.amplifyapp.com/users?source=flutter",
     ),
-    const PwaWebViewScreen(
+    (
       title: "Analytics",
       url:
           "https://master.d1qi4h2imco1od.amplifyapp.com/analytics?source=flutter",
     ),
-    const PwaWebViewScreen(
+    (
       title: "Settings",
       url:
           "https://master.d1qi4h2imco1od.amplifyapp.com/settings?source=flutter",
@@ -248,7 +251,14 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         ),
       ),
 
-      body: IndexedStack(index: selectedIndex, children: pages),
+       body: IndexedStack(
+        index: selectedIndex,
+        children: List.generate(_pageConfig.length, (i) {
+          if (!_visitedIndices.contains(i)) return const SizedBox.shrink();
+          final cfg = _pageConfig[i];
+          return PwaWebViewScreen(title: cfg.title, url: cfg.url);
+        }),
+      ),
 
       floatingActionButton: GestureDetector(
         onTap: () => Get.toNamed(AppRoutes.scanQr),
@@ -328,7 +338,10 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   }) {
     final isSelected = selectedIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => selectedIndex = index),
+      onTap: () => setState(() {
+        selectedIndex = index;
+        _visitedIndices.add(index);
+      }),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -61,14 +61,23 @@ class LoginController extends GetxController {
           refreshToken: refreshToken,
         );
 
-        final admin = result.data!.admin;
-        await SecureStorageService.saveUser({
-          'id': admin.id.toString(),
-          'name': admin.name,
-          'email': admin.email,
-          'role': admin.role,
-          if (admin.roleId != null) 'roleId': admin.roleId,
-        });
+         // Use the raw admin object from the API so all permission/module fields
+        // (permissions, modules, etc.) are preserved and passed to the web app.
+        final rawAdmin = jsonResponse['data']?['admin'];
+        final userMap = rawAdmin is Map<String, dynamic>
+            ? rawAdmin
+            : {
+                'id': result.data!.admin.id,
+                'name': result.data!.admin.name,
+                'email': result.data!.admin.email,
+                'role': result.data!.admin.role,
+                'restaurant_id': result.data!.admin.restaurantId,
+                if (result.data!.admin.roleId != null)
+                  'roleId': result.data!.admin.roleId,
+              };
+        await SecureStorageService.saveUser(
+          Map<String, dynamic>.from(userMap),
+        );
 
         //Get.offAll(() => const CommonBottomBar());
         final permissionController = Get.put(
