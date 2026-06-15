@@ -21,7 +21,7 @@ class ApiEndpoints {
 
   static const String redeemReward = "${baseUrl}admin/redeemReward";
 
-  // static const String getAllUsers = "${baseUrl}admin/user";
+  static const String getPermission = "${baseUrl}admin/permission";
 
   // /// Dynamic endpoint
   // static String getUser(String cardcode) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:loyalty_admin/Modules/Dashboard/permission_controller.dart';
 import 'package:loyalty_admin/modules/Dashboard/common_bottom_bar.dart';
 import 'package:loyalty_admin/models/login_response_model.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
@@ -68,6 +69,14 @@ class LoginController extends GetxController {
           'role': admin.role,
           if (admin.roleId != null) 'roleId': admin.roleId,
         });
+
+        //Get.offAll(() => const CommonBottomBar());
+        final permissionController = Get.put(
+          PermissionController(),
+          permanent: true,
+        );
+
+        await permissionController.loadPermissions();
 
         Get.offAll(() => const CommonBottomBar());
       } else {

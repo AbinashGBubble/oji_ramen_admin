@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:loyalty_admin/Modules/Dashboard/permission_controller.dart';
 import 'package:loyalty_admin/modules/Auth/login_controller.dart';
 import 'package:loyalty_admin/modules/Dashboard/pwaWebview_screen.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
@@ -19,22 +20,26 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   String adminName = '';
   String adminEmail = '';
 
+  late PermissionController permissionController;
+
   final List<Widget> pages = [
     const PwaWebViewScreen(
       title: "Dashboard",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com?source=flutter",
     ),
     const PwaWebViewScreen(
       title: "Users",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/users",
+      url: "https://master.d1qi4h2imco1od.amplifyapp.com/users?source=flutter",
     ),
     const PwaWebViewScreen(
       title: "Analytics",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/analytics",
+      url:
+          "https://master.d1qi4h2imco1od.amplifyapp.com/analytics?source=flutter",
     ),
     const PwaWebViewScreen(
       title: "Settings",
-      url: "https://master.d1qi4h2imco1od.amplifyapp.com/settings",
+      url:
+          "https://master.d1qi4h2imco1od.amplifyapp.com/settings?source=flutter",
     ),
   ];
 
@@ -49,6 +54,10 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         statusBarBrightness: Brightness.light,
       ),
     );
+
+    permissionController = Get.put(PermissionController(), permanent: true);
+
+    permissionController.loadPermissions();
   }
 
   Future<void> _loadAdminInfo() async {
@@ -151,10 +160,7 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
               Navigator.of(ctx).pop();
               LoginController.handleLogout(); // ← static call, no Get.find/put
             },
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -297,9 +303,17 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(icon: Icons.home_rounded, label: "Home", index: 0),
-              _navItem(icon: Icons.people_alt_outlined, label: "Users", index: 1),
+              _navItem(
+                icon: Icons.people_alt_outlined,
+                label: "Users",
+                index: 1,
+              ),
               _navItem(icon: Icons.bar_chart_rounded, label: "Stats", index: 2),
-              _navItem(icon: Icons.settings_outlined, label: "Settings", index: 3),
+              _navItem(
+                icon: Icons.settings_outlined,
+                label: "Settings",
+                index: 3,
+              ),
             ],
           ),
         ),
