@@ -24,6 +24,8 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
 
    final Set<int> _visitedIndices = {0};
 
+   final _dashboardKey = PwaWebViewKey();
+
   static const List<({String title, String url})> _pageConfig = [
     (
       title: "Dashboard",
@@ -251,12 +253,16 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         ),
       ),
 
-       body: IndexedStack(
+      body: IndexedStack(
         index: selectedIndex,
         children: List.generate(_pageConfig.length, (i) {
           if (!_visitedIndices.contains(i)) return const SizedBox.shrink();
           final cfg = _pageConfig[i];
-          return PwaWebViewScreen(title: cfg.title, url: cfg.url);
+          return PwaWebViewScreen(
+            key: i == 0 ? _dashboardKey : null,   // ← key only on Dashboard
+            title: cfg.title,
+            url: cfg.url,
+          );
         }),
       ),
 
@@ -338,10 +344,28 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   }) {
     final isSelected = selectedIndex == index;
     return GestureDetector(
-      onTap: () => setState(() {
-        selectedIndex = index;
-        _visitedIndices.add(index);
-      }),
+      onTap: () {
+        // If tapping Home, reload the Dashboard WebView to its root URL
+        if (index == 0 && selectedIndex == 0) {
+          // Already on Home tab — just reload to dashboard URL
+          _dashboardKey.currentState?.reloadToHome();
+        } else if (index == 0) {
+          // Switching back to Home tab — reload to dashboard URL
+          setState(() {
+            selectedIndex = 0;
+            _visitedIndices.add(0);
+          });
+          // Small delay so the IndexedStack switches first
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _dashboardKey.currentState?.reloadToHome();
+          });
+        } else {
+          setState(() {
+            selectedIndex = index;
+            _visitedIndices.add(index);
+          });
+        }
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

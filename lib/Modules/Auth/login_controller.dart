@@ -15,7 +15,13 @@ class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passWordController = TextEditingController();
 
-  var isLoading = false.obs;
+
+   var isLoading = false.obs;
+    RxBool isPasswordVisible = false.obs;   // ← added
+
+    void togglePasswordVisibility() {       // ← added
+      isPasswordVisible.toggle();
+    }
 
   @override
   void onInit() {

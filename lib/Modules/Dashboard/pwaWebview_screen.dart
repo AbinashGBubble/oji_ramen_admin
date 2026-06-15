@@ -7,6 +7,11 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:loyalty_admin/services/config/api_endpoints.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
 
+// Add this key class so CommonBottomBar can call reload()
+class PwaWebViewKey extends GlobalKey<_PwaWebViewScreenState> {
+  const PwaWebViewKey() : super.constructor();
+}
+
 class PwaWebViewScreen extends StatefulWidget {
   final String url;
   final String title;
@@ -24,8 +29,6 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
   @override
   bool get wantKeepAlive => true;
 
-  // Unique per-page reload flag so concurrent WebViews sharing the same
-  // origin localStorage don't consume each other's reload signal.
   String get _reloadKey =>
       '__flutter_reloaded_${widget.title.replaceAll(' ', '_').toLowerCase()}';
 
@@ -35,15 +38,16 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
     initWebView();
   }
 
-  /// Returns true if [perms] is a non-null, non-array object — the format
-  /// the web app expects for its RolePermMap.
+  // ← NEW: called by CommonBottomBar when Home tab is tapped
+  Future<void> reloadToHome() async {
+    if (controller == null) return;
+    await controller!.loadRequest(Uri.parse(widget.url));
+  }
+
   bool _isValidPermMap(dynamic perms) {
     return perms != null && perms is Map && perms.isNotEmpty;
   }
 
-  /// Fetches role permissions from the backend and returns a merged user map
-  /// with permissions in the format the web app expects:
-  ///   { "User": { view, create, edit, delete, export }, ... }
   Future<Map<String, dynamic>> _withPermissions(
     Map<String, dynamic> userMap,
     String token,
@@ -87,7 +91,7 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
       await SecureStorageService.saveUser(updated);
       return updated;
     } catch (e) {
-      debugPrint('Permission fetch error [$widget.title]: $e');
+      debugPrint('Permission fetch error [${widget.title}]: $e');
       return userMap;
     }
   }
@@ -97,9 +101,6 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
     final refreshToken = await SecureStorageService.getRefreshToken();
     var userMap = await SecureStorageService.getUser() ?? {};
 
-    // Ensure permissions are in the correct RolePermMap format before the
-    // WebView loads, so the web app can use them on first render without
-    // needing an async fetch (which races with RoleGuard's redirect check).
     if (accessToken != null && !_isValidPermMap(userMap['permissions'])) {
       userMap = await _withPermissions(userMap, accessToken);
     }
