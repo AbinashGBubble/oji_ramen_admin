@@ -161,23 +161,30 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
             ),
           ),
 
-          // CENTER SCANNER FRAME
-          Center(
+         Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 180),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
                   "Align QR code within the frame",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 25),
+
                 Container(
                   width: 250,
                   height: 250,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: Colors.white.withOpacity(.3)),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(.3),
+                    ),
                   ),
                   child: Stack(
                     children: [
@@ -188,14 +195,16 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                     ],
                   ),
                 ),
-                const SizedBox(height: 30),
+
+                const SizedBox(height: 24),
+
                 GestureDetector(
                   onTap: () async {
                     await _cameraController?.toggleTorch();
                   },
                   child: Container(
-                    height: 70,
-                    width: 70,
+                    height: 60,
+                    width: 60,
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       shape: BoxShape.circle,
@@ -204,13 +213,14 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                     child: const Icon(
                       Icons.flash_on,
                       color: Colors.white,
-                      size: 32,
+                      size: 28,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
 
           // BOTTOM SHEET
           Align(
@@ -335,8 +345,8 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
           ),
 
           // CENTER message
-          Center(
-            child: Column(
+            Center(
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.videocam_off_rounded,

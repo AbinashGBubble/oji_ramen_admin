@@ -125,6 +125,7 @@ abstract class BaseApiService {
     required File file,
     String fileKey = 'file',
     bool authRequired = true,
+    bool retry = false,
   }) async {
     try {
       final uri = Uri.parse(url);
@@ -158,8 +159,8 @@ abstract class BaseApiService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      // 🔁 TOKEN REFRESH
-      if (response.statusCode == 401 && authRequired) {
+      // 🔁 TOKEN REFRESH (only once — guard against infinite retry)
+      if (response.statusCode == 401 && authRequired && !retry) {
         final newToken = await RefreshTokenApiService().refreshAccessToken();
 
         if (newToken != null) {
@@ -168,6 +169,7 @@ abstract class BaseApiService {
             file: file,
             fileKey: fileKey,
             authRequired: authRequired,
+            retry: true,
           );
         }
         return null;

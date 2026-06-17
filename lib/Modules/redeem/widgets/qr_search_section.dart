@@ -34,7 +34,10 @@ class QrSearchSection extends StatelessWidget {
                   title: "Check Profile",
                   icon: Icons.person_outline,
                   selected: !controller.isRedeem.value,
-                  onTap: () => controller.isRedeem.value = false,
+                  onTap: () {
+                    controller.isRedeem.value = false;
+                    uidController.clear(); 
+                  },
                 ),
               ),
               Expanded(
@@ -42,7 +45,10 @@ class QrSearchSection extends StatelessWidget {
                   title: "Redeem Reward",
                   icon: Icons.card_giftcard_outlined,
                   selected: controller.isRedeem.value,
-                  onTap: () => controller.isRedeem.value = true,
+                  onTap: () {
+                    controller.isRedeem.value = true;
+                    uidController.clear(); 
+                  },
                 ),
               ),
             ],
@@ -70,8 +76,8 @@ class QrSearchSection extends StatelessWidget {
             children: [
               Text(
                 controller.isRedeem.value
-                    ? "Or enter reward code"
-                    : "Or enter Mobile Number",
+                    ? "Enter Reward Code"
+                    : "Enter Mobile Number",
                 style: AppTextStyle.regular(size: 13, color: Colors.grey),
               ),
               const SizedBox(height: 10),
@@ -121,10 +127,10 @@ class QrSearchSection extends StatelessWidget {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Icon(Icons.qr_code_scanner,
+                          : const Icon(Icons.search,
                               color: Colors.white, size: 18),
                       label: Text(
-                        controller.isLoading.value ? "" : "Scan",
+                        controller.isLoading.value ? "" : "Search",
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

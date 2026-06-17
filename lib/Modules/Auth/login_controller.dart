@@ -19,8 +19,28 @@ class LoginController extends GetxController {
    var isLoading = false.obs;
     RxBool isPasswordVisible = false.obs;   // ← added
 
+    final emailError = RxnString();         // ← null when valid
+
     void togglePasswordVisibility() {       // ← added
       isPasswordVisible.toggle();
+    }
+
+    /// Returns true when the email field holds a syntactically valid address.
+    bool validateEmail() {
+      final email = emailController.text.trim();
+      if (email.isEmpty) {
+        emailError.value = "Email is required";
+        return false;
+      }
+
+      final emailRegex = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
+      if (!emailRegex.hasMatch(email)) {
+        emailError.value = "Please enter a valid email address";
+        return false;
+      }
+
+      emailError.value = null;
+      return true;
     }
 
   @override
@@ -37,6 +57,8 @@ class LoginController extends GetxController {
   }
 
   Future<void> loginUser() async {
+    if (!validateEmail()) return;
+
     isLoading.value = true;
 
     try {
@@ -95,9 +117,13 @@ class LoginController extends GetxController {
 
         Get.offAll(() => const CommonBottomBar());
       } else {
+        final errorMessage = result.message == "Validation failed"
+            ? "Please enter a valid email and password"
+            : result.message;
+
         Get.rawSnackbar(
-          messageText: Text(
-            result.message,
+          messageText: Text(  
+            errorMessage,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
               color: Colors.white,

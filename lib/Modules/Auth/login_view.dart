@@ -31,12 +31,9 @@ class LoginView extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                "Welcome Back",
-                style: AppTextStyle.semiBold(
-                  size: 28.sp,
-                  color: AppColors.primary,
-                ),
+               Image(
+                image: AssetImage('assets/icons/Oji_log.png'),
+                height: 120,
               ),
               Gaps.h8,
               Text(
@@ -48,30 +45,58 @@ class LoginView extends StatelessWidget {
               ),
               Gaps.h20,
 
-              // ── Email Field ──────────────────────────────────────────────
-              Container(
-                height: 60.h,
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Center(
-                  child: TextField(
-                    controller: controller.emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textAlignVertical: TextAlignVertical.center,
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      hintText: "Email",
-                      hintStyle: AppTextStyle.regular(
-                        size: 14.sp,
-                        color: Colors.grey,
+              // ── Email Field (reactive) ───────────────────────────────────
+              Obx(
+                () => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 60.h,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(10.r),
+                        border: controller.emailError.value != null
+                            ? Border.all(color: Colors.red.shade400)
+                            : null,
+                      ),
+                      child: Center(
+                        child: TextField(
+                          controller: controller.emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textAlignVertical: TextAlignVertical.center,
+                          onChanged: (_) {
+                            if (controller.emailError.value != null) {
+                              controller.emailError.value = null;
+                            }
+                          },
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            hintText: "Email",
+                            hintStyle: AppTextStyle.regular(
+                              size: 14.sp,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    if (controller.emailError.value != null) ...[
+                      Gaps.h8,
+                      Padding(
+                        padding: EdgeInsets.only(left: 4.w),
+                        child: Text(
+                          controller.emailError.value!,
+                          style: AppTextStyle.regular(
+                            size: 12.sp,
+                            color: Colors.red.shade400,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
 

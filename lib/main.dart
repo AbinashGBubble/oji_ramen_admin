@@ -16,11 +16,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final shortestSide = constraints.maxWidth < constraints.maxHeight
+            ? constraints.maxWidth
+            : constraints.maxHeight;
+        // Tablets get a tablet-scale design size so ScreenUtil's scale factor
+        // stays near 1× instead of ballooning everything ~2x on the wider screen.
+        final isTablet = shortestSide >= 600;
+        final designSize = isTablet
+            ? const Size(768, 1024)
+            : const Size(375, 812);
+
+        return ScreenUtilInit(
+          designSize: designSize,
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) {
         return GetMaterialApp(
           title: 'Flutter Demo',
           debugShowCheckedModeBanner: false,
@@ -34,8 +46,10 @@ class MyApp extends StatelessWidget {
           ),
           home: child,
         );
+          },
+          child: const SizedBox.shrink(),
+        );
       },
-      child: const SizedBox.shrink(),
     );
   }
 }

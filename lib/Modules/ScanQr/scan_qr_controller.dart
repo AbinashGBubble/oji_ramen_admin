@@ -269,10 +269,9 @@ class ScanQrController extends GetxController {
       isRedeeming.value = true;
 
       final response =
-          await _rewardApi.rewardLookUp(identifier: rewardData!.redeemCode);
-
+          await _rewardApi.reedemReward(id: rewardData!.id);
+    
       if (response?['success'] == true) {
-        showRewardData.value = false;
         rewardResponse.value = null;
         Get.snackbar(
           "Success",

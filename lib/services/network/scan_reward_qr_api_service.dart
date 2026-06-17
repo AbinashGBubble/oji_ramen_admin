@@ -5,4 +5,8 @@ class ScanRewardQrApiService extends BaseApiService {
   Future<Map<String, dynamic>?> rewardLookUp({required String identifier}) {
     return get(ApiEndpoints.rewardLookUp(identifier), authRequired: true);
   }
+
+   Future<Map<String, dynamic>?> reedemReward({required int id}) {
+    return get(ApiEndpoints.redeemReward(id), authRequired: true);
+  }
 }

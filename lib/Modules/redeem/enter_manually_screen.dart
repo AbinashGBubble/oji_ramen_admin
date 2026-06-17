@@ -36,14 +36,59 @@ class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
     final uid = _uidController.text.trim();
     if (uid.isEmpty) return;
     final qrType = controller.isRedeem.value ? 'rewards' : 'profile';
+     if (!controller.isRedeem.value && uid.length < 10) {
+      Get.snackbar("Invalid Number", "Please enter a valid 10-digit mobile number");
+      
+      return;
+    }
     await controller.handleQrCode('{"uid":"$uid","type":"$qrType"}');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return  Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: _buildAppBar(),
+
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Image(
+              image: AssetImage('assets/icons/Oji_log.png'),
+              height: 40,
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Oji Ramen',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  'Rewards Admin',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.grey.shade200),
+        ),
+      ),
       body: Obx(
         () => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 40),
@@ -80,84 +125,6 @@ class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
               if (controller.isRedeem.value && controller.showRewardData.value)
                 RewardCard(controller: controller),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(72),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x10000000),
-              blurRadius: 8,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                // LOGO
-                Container(
-                  height: 44,
-                  width: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD92D67),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "LA",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ),
-
-                Gaps.w12,
-
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Loyalty Admin",
-                      style: AppTextStyle.semiBold(size: 18, color: Colors.black),
-                    ),
-                    Text(
-                      "Restaurant Management",
-                      style: AppTextStyle.regular(size: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-
-                const Spacer(),
-
-                // LOGOUT
-                GestureDetector(
-                  onTap: () => Get.offAll(() => const CommonBottomBar()),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4F4F4),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.logout, size: 20),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

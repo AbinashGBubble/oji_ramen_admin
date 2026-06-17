@@ -183,23 +183,9 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         surfaceTintColor: Colors.white,
         title: Row(
           children: [
-            Container(
+            Image(
+              image: AssetImage('assets/icons/Oji_log.png'),
               height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD7425B).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text(
-                  'OJI',
-                  style: TextStyle(
-                    color: Color(0xFFD7425B),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
             ),
             const SizedBox(width: 10),
             Column(

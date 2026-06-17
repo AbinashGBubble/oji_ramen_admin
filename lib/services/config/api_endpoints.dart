@@ -1,7 +1,7 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = "https://loyaltydevapi.xpulsar.tech/api/v1/";
+  static const String baseUrl = "https://loyaltydevapi.pryzma.in/api/v1";
 
   static const String loginUrl = "${baseUrl}admin/login";
   static const String logoutUrl = "${baseUrl}admin/logout";
@@ -16,10 +16,7 @@ class ApiEndpoints {
   }
 
   static String addVisits(int id) => "${baseUrl}admin/addVisit/$id";
-
-  //static String addVisits(int id) => "${baseUrl}admin/addVisit/$id";
-
-  static const String redeemReward = "${baseUrl}admin/redeemReward";
+  static String redeemReward(int id) => "${baseUrl}admin/redeemReward/$id";
 
   static const String getPermission = "${baseUrl}admin/permission";
 
