@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
-import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:loyalty_admin/services/config/api_endpoints.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
@@ -24,7 +24,14 @@ class PwaWebViewScreen extends StatefulWidget {
 
 class _PwaWebViewScreenState extends State<PwaWebViewScreen>
     with AutomaticKeepAliveClientMixin {
-  WebViewController? controller;
+  InAppWebViewController? controller;
+
+  // Session values resolved once in initState and reused by onLoadStop
+  // every time the page (re)loads.
+  bool _sessionReady = false;
+  String? _accessToken;
+  String? _refreshToken;
+  String _userJson = '{}';
 
   @override
   bool get wantKeepAlive => true;
@@ -35,13 +42,15 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
   @override
   void initState() {
     super.initState();
-    initWebView();
+    _prepareSession();
   }
 
   // ← NEW: called by CommonBottomBar when Home tab is tapped
   Future<void> reloadToHome() async {
     if (controller == null) return;
-    await controller!.loadRequest(Uri.parse(widget.url));
+    await controller!.loadUrl(
+      urlRequest: URLRequest(url: WebUri(widget.url)),
+    );
   }
 
   bool _isValidPermMap(dynamic perms) {
@@ -96,56 +105,68 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen>
     }
   }
 
-  Future<void> initWebView() async {
-    final accessToken = await SecureStorageService.getAccessToken();
-    final refreshToken = await SecureStorageService.getRefreshToken();
+  // Resolves token/user data once before the WebView is even created.
+  // (Previously this lived inside initWebView; the WebViewController
+  // creation + JS injection now happens in onLoadStop below.)
+  Future<void> _prepareSession() async {
+    _accessToken = await SecureStorageService.getAccessToken();
+    _refreshToken = await SecureStorageService.getRefreshToken();
     var userMap = await SecureStorageService.getUser() ?? {};
 
-    if (accessToken != null && !_isValidPermMap(userMap['permissions'])) {
-      userMap = await _withPermissions(userMap, accessToken);
+    if (_accessToken != null && !_isValidPermMap(userMap['permissions'])) {
+      userMap = await _withPermissions(userMap, _accessToken!);
     }
 
-    final userJson =
-        jsonEncode(userMap).replaceAll("'", "\\'").replaceAll('\n', '');
-
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (url) async {
-            await controller!.runJavaScript("""
-              localStorage.setItem('oji_token', '${accessToken ?? ''}');
-              localStorage.setItem('oji_refresh_token', '${refreshToken ?? ''}');
-              localStorage.setItem('oji_user', '$userJson');
-
-              var _rk = '$_reloadKey';
-              if (!localStorage.getItem(_rk)) {
-                localStorage.setItem(_rk, '1');
-                window.location.reload();
-              } else {
-                localStorage.removeItem(_rk);
-              }
-            """);
-
-            debugPrint("PWA SESSION READY — ${widget.title}");
-          },
-          onWebResourceError: (error) {
-            debugPrint("WEB ERROR [${widget.title}] => ${error.description}");
-          },
-        ),
-      );
-
-    await controller!.loadRequest(Uri.parse(widget.url));
+    _userJson = jsonEncode(userMap).replaceAll("'", "\\'").replaceAll('\n', '');
+    _sessionReady = true;
 
     if (mounted) setState(() {});
+  }
+
+  Future<void> _injectSession(InAppWebViewController c) async {
+    await c.evaluateJavascript(source: """
+      localStorage.setItem('oji_token', '${_accessToken ?? ''}');
+      localStorage.setItem('oji_refresh_token', '${_refreshToken ?? ''}');
+      localStorage.setItem('oji_user', '$_userJson');
+
+      var _rk = '$_reloadKey';
+      if (!localStorage.getItem(_rk)) {
+        localStorage.setItem(_rk, '1');
+        window.location.reload();
+      } else {
+        localStorage.removeItem(_rk);
+      }
+    """);
+
+    debugPrint("PWA SESSION READY — ${widget.title}");
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    return controller == null
-        ? const Center(child: CircularProgressIndicator())
-        : WebViewWidget(controller: controller!);
+    // Wait until secure storage has been read before mounting the WebView,
+    // same gating behaviour as the old `controller == null` check.
+    if (!_sessionReady) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return InAppWebView(
+      initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+      initialSettings: InAppWebViewSettings(
+        javaScriptEnabled: true,
+        // Lets the page's own <input type="file"> trigger the native
+        // picker; both Android and iOS handle this out of the box.
+        useOnDownloadStart: true,
+      ),
+      onWebViewCreated: (c) => controller = c,
+      onLoadStop: (c, url) async => _injectSession(c),
+      onReceivedError: (c, request, error) {
+        debugPrint("WEB ERROR [${widget.title}] => ${error.description}");
+      },
+      // Optional: only needed if you want to restrict file types or
+      // swap in your own picker UI instead of the OS default on Android.
+      // androidOnShowFileChooser: (c, params) async => null,
+    );
   }
 }

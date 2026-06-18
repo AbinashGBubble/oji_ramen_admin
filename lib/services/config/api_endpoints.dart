@@ -1,7 +1,7 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = "https://loyaltydevapi.pryzma.in/api/v1";
+  static const String baseUrl = "https://loyaltydevapi.pryzma.in/api/v1/";
 
   static const String loginUrl = "${baseUrl}admin/login";
   static const String logoutUrl = "${baseUrl}admin/logout";

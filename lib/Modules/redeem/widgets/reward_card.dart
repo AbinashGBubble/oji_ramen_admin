@@ -87,7 +87,7 @@ class RewardCard extends StatelessWidget {
               icon: const Icon(Icons.check_circle_outline,
                   color: Colors.white, size: 18),
               label: const Text(
-                "Confirm Visits",
+                "Confirm Reedem",
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

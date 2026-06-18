@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:loyalty_admin/models/add_visits_response.dart';
 import 'package:loyalty_admin/models/profile_scan_qr_model.dart';
 import 'package:loyalty_admin/models/rewards_scan_qr_response.dart';
+import 'package:loyalty_admin/routes/app_routes.dart';
 
 import 'package:loyalty_admin/services/network/add_visits_api_service.dart';
 import 'package:loyalty_admin/services/network/scan_reward_qr_api_service.dart';
@@ -236,6 +237,9 @@ class ScanQrController extends GetxController {
           parsed.message,
           snackPosition: SnackPosition.BOTTOM,
         );
+        await Future.delayed(const Duration(milliseconds: 1200));
+        reset();
+        Get.offAllNamed(AppRoutes.home);
       } else {
         Get.snackbar(
           "Error",
@@ -269,7 +273,7 @@ class ScanQrController extends GetxController {
       isRedeeming.value = true;
 
       final response =
-          await _rewardApi.reedemReward(id: rewardData!.id);
+          await _rewardApi.reedemReward(userID:rewardData!.user.id,rewardId:  rewardData!.id);
     
       if (response?['success'] == true) {
         rewardResponse.value = null;
@@ -278,6 +282,9 @@ class ScanQrController extends GetxController {
           "Reward redeemed successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
+        await Future.delayed(const Duration(milliseconds: 1200));
+        reset();
+        Get.offAllNamed(AppRoutes.home);
       } else {
         Get.snackbar(
           "Error",

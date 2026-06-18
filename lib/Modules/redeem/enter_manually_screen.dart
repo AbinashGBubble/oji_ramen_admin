@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:loyalty_admin/modules/Dashboard/common_bottom_bar.dart';
+import 'package:loyalty_admin/modules/Dashboard/app_bottom_nav_bar.dart';
 import 'package:loyalty_admin/modules/ScanQr/scan_qr_controller.dart';
 import 'package:loyalty_admin/modules/redeem/widgets/profile_card.dart';
 import 'package:loyalty_admin/modules/redeem/widgets/reward_card.dart';
 import 'package:loyalty_admin/modules/redeem/widgets/qr_search_section.dart';
 import 'package:loyalty_admin/common/app_spacing.dart';
 import 'package:loyalty_admin/common/app_text_styles.dart';
+import 'package:loyalty_admin/routes/app_routes.dart';
 
 class EnterCodeManuallyScreen extends StatefulWidget {
   const EnterCodeManuallyScreen({super.key});
@@ -36,17 +37,36 @@ class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
     final uid = _uidController.text.trim();
     if (uid.isEmpty) return;
     final qrType = controller.isRedeem.value ? 'rewards' : 'profile';
-     if (!controller.isRedeem.value && uid.length < 10) {
-      Get.snackbar("Invalid Number", "Please enter a valid 10-digit mobile number");
-      
+    if (!controller.isRedeem.value && uid.length < 10) {
+      Get.snackbar(
+        "Invalid Number",
+        "Please enter a valid 10-digit mobile number",
+      );
       return;
     }
     await controller.handleQrCode('{"uid":"$uid","type":"$qrType"}');
   }
 
+  /// Handles bottom-nav taps from within this screen.
+  ///
+  /// Since [EnterCodeManuallyScreen] is not part of the [CommonBottomBar]
+  /// IndexedStack, tapping any tab navigates back to the home shell and
+  /// passes the desired tab index so [CommonBottomBar] opens to the right page.
+  void _onNavTabSelected(AppBottomNavBarTab tab) {
+    // Map enum → int index that CommonBottomBar's _pageConfig uses.
+    const tabIndexMap = {
+      AppBottomNavBarTab.home: 0,
+      AppBottomNavBarTab.users: 1,
+      AppBottomNavBarTab.stats: 2,
+      AppBottomNavBarTab.settings: 3,
+    };
+    final index = tabIndexMap[tab] ?? 0;
+    Get.offAllNamed(AppRoutes.home, arguments: {'initialTab': index});
+  }
+
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
 
       appBar: AppBar(
@@ -56,7 +76,7 @@ class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Image(
+            const Image(
               image: AssetImage('assets/icons/Oji_log.png'),
               height: 40,
             ),
@@ -89,6 +109,7 @@ class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
           child: Container(height: 1, color: Colors.grey.shade200),
         ),
       ),
+
       body: Obx(
         () => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 40),
@@ -127,6 +148,15 @@ class _EnterCodeManuallyScreenState extends State<EnterCodeManuallyScreen> {
             ],
           ),
         ),
+      ),
+
+      // ── Bottom nav bar ──────────────────────────────────────────────────
+      // No tab is highlighted (AppBottomNavBarTab.none) because this screen
+      // lives outside the four main tabs. Tapping a tab navigates back to the
+      // home shell with the correct tab pre-selected via route arguments.
+      bottomNavigationBar: AppBottomNavBar(
+        activeTab: AppBottomNavBarTab.none,
+        onTabSelected: _onNavTabSelected,
       ),
     );
   }

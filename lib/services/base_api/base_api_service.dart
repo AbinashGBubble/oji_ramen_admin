@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
@@ -6,6 +7,7 @@ import 'package:loyalty_admin/services/network/refresh_token_api_service.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
 
 abstract class BaseApiService {
+  static const Duration _kRequestTimeout = Duration(seconds: 20);
   /* ================= HEADERS ================= */
 
   Future<Map<String, String>> _buildHeaders({
@@ -19,6 +21,7 @@ abstract class BaseApiService {
 
     if (authRequired) {
       final token = await SecureStorageService.getAccessToken();
+      debugPrint('│ token preview : ${token}');
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -50,41 +53,53 @@ abstract class BaseApiService {
         extraHeaders: extraHeaders,
       );
 
-      debugPrint("API URL: $uri");
+    debugPrint('┌── [REQUEST] ───────────────────────────────');
+    debugPrint('│ method  : ${method.name.toUpperCase()}');
+    debugPrint('│ url     : $uri');
+    debugPrint('│ retry   : $retry');
+    if (body != null) {
+      debugPrint('│ body    : ${jsonEncode(body)}');
+    }
+    debugPrint('└────────────────────────────────────────────');
 
       late http.Response response;
 
       switch (method) {
         case HttpMethod.post:
-          response = await http.post(
-            uri,
-            headers: headers,
-            body: jsonEncode(body),
-          );
+          response = await http
+              .post(uri, headers: headers, body: jsonEncode(body))
+              .timeout(_kRequestTimeout);
           break;
 
         case HttpMethod.put:
-          response = await http.put(
-            uri,
-            headers: headers,
-            body: body != null && body.isNotEmpty ? jsonEncode(body) : null,
-          );
+          response = await http
+              .put(
+                uri,
+                headers: headers,
+                body: body != null && body.isNotEmpty ? jsonEncode(body) : null,
+              )
+              .timeout(_kRequestTimeout);
           break;
 
         case HttpMethod.delete:
-          response = await http.delete(
-            uri,
-            headers: headers,
-          );
+          response = await http
+              .delete(uri, headers: headers)
+              .timeout(_kRequestTimeout);
           break;
 
         case HttpMethod.get:
-          response = await http.get(
-            uri,
-            headers: headers,
-          );
+          response = await http
+              .get(uri, headers: headers)
+              .timeout(_kRequestTimeout);
           break;
       }
+
+
+    debugPrint('┌── [RESPONSE] ──────────────────────────────');
+    debugPrint('│ status  : ${response.statusCode}');
+    debugPrint('│ url     : $uri');
+    debugPrint('│ body    : ${response.body}');
+    debugPrint('└────────────────────────────────────────────');
 
       // 🔁 TOKEN REFRESH
       if (response.statusCode == 401 && authRequired && !retry) {
@@ -112,6 +127,9 @@ abstract class BaseApiService {
       return jsonDecode(response.body);
     } on SocketException {
       debugPrint("No internet connection");
+      return null;
+    } on TimeoutException {
+      debugPrint("Request timed out: $url");
       return null;
     } catch (e) {
       debugPrint("API error: $e");
@@ -156,7 +174,7 @@ abstract class BaseApiService {
 
       debugPrint("API URL: $uri");
 
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(_kRequestTimeout);
       final response = await http.Response.fromStream(streamedResponse);
 
       // 🔁 TOKEN REFRESH (only once — guard against infinite retry)
@@ -176,6 +194,9 @@ abstract class BaseApiService {
       }
 
       return jsonDecode(response.body);
+    } on TimeoutException {
+      debugPrint("Multipart request timed out: $url");
+      return null;
     } catch (e) {
       debugPrint("Multipart error: $e");
       return null;

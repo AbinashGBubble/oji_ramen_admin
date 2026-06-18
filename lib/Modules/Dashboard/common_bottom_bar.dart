@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:loyalty_admin/Modules/Dashboard/permission_controller.dart';
 import 'package:loyalty_admin/modules/Auth/login_controller.dart';
+import 'package:loyalty_admin/modules/Dashboard/app_bottom_nav_bar.dart';
 import 'package:loyalty_admin/modules/Dashboard/pwaWebview_screen.dart';
 import 'package:loyalty_admin/routes/app_routes.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
@@ -51,6 +52,16 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   @override
   void initState() {
     super.initState();
+    // Support deep-linking into a specific tab by passing an int argument:
+    //   Get.offAllNamed(AppRoutes.home, arguments: {'initialTab': 2})
+    final args = Get.arguments;
+    if (args is Map && args['initialTab'] is int) {
+      final tab = args['initialTab'] as int;
+      if (tab >= 0 && tab < _pageConfig.length) {
+        selectedIndex = tab;
+        _visitedIndices.add(tab);
+      }
+    }
     _loadAdminInfo();
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -286,91 +297,47 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
         ),
       ),
 
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(40),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(icon: Icons.home_rounded, label: "Home", index: 0),
-              _navItem(
-                icon: Icons.people_alt_outlined,
-                label: "Users",
-                index: 1,
-              ),
-              _navItem(icon: Icons.bar_chart_rounded, label: "Stats", index: 2),
-              _navItem(
-                icon: Icons.settings_outlined,
-                label: "Settings",
-                index: 3,
-              ),
-            ],
-          ),
-        ),
+      bottomNavigationBar: AppBottomNavBar(
+        activeTab: _indexToTab(selectedIndex),
+        onTabSelected: _onNavTabSelected,
       ),
     );
   }
 
-  Widget _navItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
-    final isSelected = selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        // If tapping Home, reload the Dashboard WebView to its root URL
-        if (index == 0 && selectedIndex == 0) {
-          // Already on Home tab — just reload to dashboard URL
-          _dashboardKey.currentState?.reloadToHome();
-        } else if (index == 0) {
-          // Switching back to Home tab — reload to dashboard URL
-          setState(() {
-            selectedIndex = 0;
-            _visitedIndices.add(0);
-          });
-          // Small delay so the IndexedStack switches first
-          Future.delayed(const Duration(milliseconds: 100), () {
-            _dashboardKey.currentState?.reloadToHome();
-          });
-        } else {
-          setState(() {
-            selectedIndex = index;
-            _visitedIndices.add(index);
-          });
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 26,
-            color: isSelected ? const Color(0xFFD7425B) : Colors.grey,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isSelected ? const Color(0xFFD7425B) : Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
+  // Maps the int page index to the enum used by AppBottomNavBar.
+  AppBottomNavBarTab _indexToTab(int index) {
+    switch (index) {
+      case 0:
+        return AppBottomNavBarTab.home;
+      case 1:
+        return AppBottomNavBarTab.users;
+      case 2:
+        return AppBottomNavBarTab.stats;
+      case 3:
+        return AppBottomNavBarTab.settings;
+      default:
+        return AppBottomNavBarTab.none;
+    }
   }
+
+  void _onNavTabSelected(AppBottomNavBarTab tab) {
+    final index = tab.index; // enum order matches page index order
+    if (index == 0 && selectedIndex == 0) {
+      _dashboardKey.currentState?.reloadToHome();
+    } else if (index == 0) {
+      setState(() {
+        selectedIndex = 0;
+        _visitedIndices.add(0);
+      });
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _dashboardKey.currentState?.reloadToHome();
+      });
+    } else {
+      setState(() {
+        selectedIndex = index;
+        _visitedIndices.add(index);
+      });
+    }
+  }
+
 }
