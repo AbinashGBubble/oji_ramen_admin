@@ -1,41 +1,71 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+
+import 'package:loyalty_admin/routes/app_routes.dart';
 import 'package:loyalty_admin/services/network/refresh_token_api_service.dart';
 import 'package:loyalty_admin/services/storage/secure_storage_service.dart';
 
+enum HttpMethod { get, post, put, delete }
+
 abstract class BaseApiService {
-  static const Duration _kRequestTimeout = Duration(seconds: 20);
+  final RefreshTokenApiService _refreshService = RefreshTokenApiService();
+
+  static const Duration _timeout = Duration(seconds: 20);
+
   /* ================= HEADERS ================= */
 
   Future<Map<String, String>> _buildHeaders({
     bool authRequired = true,
+    String? retryToken,
     Map<String, String>? extraHeaders,
   }) async {
-    final headers = <String, String>{
+    final headers = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
 
     if (authRequired) {
-      final token = await SecureStorageService.getAccessToken();
-      debugPrint('│ token preview : ${token}');
+      final token = retryToken ?? await SecureStorageService.getAccessToken();
+
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
 
-    // ✅ MERGE EXTRA HEADERS
-    if (extraHeaders != null && extraHeaders.isNotEmpty) {
+    if (extraHeaders != null) {
       headers.addAll(extraHeaders);
     }
 
     return headers;
   }
 
-  /* ================= REQUEST HANDLER ================= */
+  /* ================= SAFE DECODE ================= */
+
+  Map<String, dynamic> _safeDecode(String body) {
+    try {
+      return jsonDecode(body);
+    } catch (_) {
+      return {"success": false, "message": "Invalid server response"};
+    }
+  }
+
+  /* ================= LOGOUT ================= */
+
+  Future<void> _forceLogout() async {
+    await SecureStorageService.clearTokens();
+
+    if (Get.currentRoute != AppRoutes.login) {
+      Get.offAllNamed(AppRoutes.login);
+    }
+  }
+
+  /* ================= REQUEST ================= */
 
   Future<Map<String, dynamic>?> _request({
     required String url,
@@ -43,6 +73,7 @@ abstract class BaseApiService {
     Map<String, dynamic>? body,
     bool authRequired = true,
     bool retry = false,
+    String? retryToken,
     Map<String, String>? extraHeaders,
   }) async {
     try {
@@ -50,25 +81,25 @@ abstract class BaseApiService {
 
       final headers = await _buildHeaders(
         authRequired: authRequired,
+        retryToken: retryToken,
         extraHeaders: extraHeaders,
       );
-
-    debugPrint('┌── [REQUEST] ───────────────────────────────');
-    debugPrint('│ method  : ${method.name.toUpperCase()}');
-    debugPrint('│ url     : $uri');
-    debugPrint('│ retry   : $retry');
-    if (body != null) {
-      debugPrint('│ body    : ${jsonEncode(body)}');
-    }
-    debugPrint('└────────────────────────────────────────────');
 
       late http.Response response;
 
       switch (method) {
+        case HttpMethod.get:
+          response = await http.get(uri, headers: headers).timeout(_timeout);
+          break;
+
         case HttpMethod.post:
           response = await http
-              .post(uri, headers: headers, body: jsonEncode(body))
-              .timeout(_kRequestTimeout);
+              .post(
+                uri,
+                headers: headers,
+                body: body != null ? jsonEncode(body) : null,
+              )
+              .timeout(_timeout);
           break;
 
         case HttpMethod.put:
@@ -76,34 +107,26 @@ abstract class BaseApiService {
               .put(
                 uri,
                 headers: headers,
-                body: body != null && body.isNotEmpty ? jsonEncode(body) : null,
+                body: body != null ? jsonEncode(body) : null,
               )
-              .timeout(_kRequestTimeout);
+              .timeout(_timeout);
           break;
 
         case HttpMethod.delete:
-          response = await http
-              .delete(uri, headers: headers)
-              .timeout(_kRequestTimeout);
-          break;
-
-        case HttpMethod.get:
-          response = await http
-              .get(uri, headers: headers)
-              .timeout(_kRequestTimeout);
+          response = await http.delete(uri, headers: headers).timeout(_timeout);
           break;
       }
 
+      debugPrint("""
+URL : $url
+STATUS : ${response.statusCode}
+BODY : ${response.body}
+""");
 
-    debugPrint('┌── [RESPONSE] ──────────────────────────────');
-    debugPrint('│ status  : ${response.statusCode}');
-    debugPrint('│ url     : $uri');
-    debugPrint('│ body    : ${response.body}');
-    debugPrint('└────────────────────────────────────────────');
+      /* ================= REFRESH ================= */
 
-      // 🔁 TOKEN REFRESH
       if (response.statusCode == 401 && authRequired && !retry) {
-        final newToken = await RefreshTokenApiService().refreshAccessToken();
+        final newToken = await _refreshService.refreshAccessToken();
 
         if (newToken != null) {
           return _request(
@@ -112,138 +135,132 @@ abstract class BaseApiService {
             body: body,
             authRequired: authRequired,
             retry: true,
+            retryToken: newToken,
             extraHeaders: extraHeaders,
           );
         }
-        return null;
+
+        await _forceLogout();
+
+        return {"success": false, "message": "Session expired"};
       }
 
-      // ✅ SUCCESS
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body);
-      }
-
-      // ❌ ERROR RESPONSE
-      return jsonDecode(response.body);
-    } on SocketException {
-      debugPrint("No internet connection");
-      return null;
+      return _safeDecode(response.body);
     } on TimeoutException {
-      debugPrint("Request timed out: $url");
-      return null;
+      return {"success": false, "message": "Request timeout"};
+    } on SocketException {
+      return {"success": false, "message": "No internet"};
     } catch (e) {
-      debugPrint("API error: $e");
-      return null;
+      debugPrint("API ERROR : $e");
+
+      return {"success": false, "message": e.toString()};
     }
   }
 
-  // multipart request
+  /* ================= MULTIPART ================= */
+
   Future<Map<String, dynamic>?> postMultipart(
     String url, {
     required File file,
     String fileKey = 'file',
     bool authRequired = true,
     bool retry = false,
+    String? retryToken,
   }) async {
     try {
-      final uri = Uri.parse(url);
-
       final headers = await _buildHeaders(
         authRequired: authRequired,
-        extraHeaders: {
-          'Content-Type': 'multipart/form-data',
-        },
+        retryToken: retryToken,
       );
 
-      final extension = file.path.split('.').last.toLowerCase();
+      headers.remove('Content-Type');
 
-      String mimeType = 'image/jpeg';
-      if (extension == 'png') mimeType = 'image/png';
-      if (extension == 'jpg' || extension == 'jpeg') mimeType = 'image/jpeg';
+      final request = http.MultipartRequest('POST', Uri.parse(url));
 
-      final request = http.MultipartRequest('POST', uri);
       request.headers.addAll(headers);
 
       request.files.add(
         await http.MultipartFile.fromPath(
           fileKey,
           file.path,
-          contentType: http.MediaType.parse(mimeType),
+          contentType: MediaType('image', 'jpeg'),
         ),
       );
 
-      debugPrint("API URL: $uri");
+      final stream = await request.send();
 
-      final streamedResponse = await request.send().timeout(_kRequestTimeout);
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await http.Response.fromStream(stream);
 
-      // 🔁 TOKEN REFRESH (only once — guard against infinite retry)
       if (response.statusCode == 401 && authRequired && !retry) {
-        final newToken = await RefreshTokenApiService().refreshAccessToken();
+        final token = await _refreshService.refreshAccessToken();
 
-        if (newToken != null) {
+        if (token != null) {
           return postMultipart(
             url,
             file: file,
             fileKey: fileKey,
             authRequired: authRequired,
             retry: true,
+            retryToken: token,
           );
         }
-        return null;
+
+        await _forceLogout();
       }
 
-      return jsonDecode(response.body);
-    } on TimeoutException {
-      debugPrint("Multipart request timed out: $url");
-      return null;
+      return _safeDecode(response.body);
     } catch (e) {
-      debugPrint("Multipart error: $e");
-      return null;
+      return {"success": false, "message": e.toString()};
     }
   }
 
-  /* ================= PUBLIC METHODS ================= */
+  /* ================= PUBLIC ================= */
 
   Future<Map<String, dynamic>?> get(
     String url, {
     bool authRequired = true,
     Map<String, String>? extraHeaders,
-  }) =>
-      _request(
-        url: url,
-        method: HttpMethod.get,
-        authRequired: authRequired,
-        extraHeaders: extraHeaders,
-      );
+  }) => _request(
+    url: url,
+    method: HttpMethod.get,
+    authRequired: authRequired,
+    extraHeaders: extraHeaders,
+  );
 
   Future<Map<String, dynamic>?> post(
-  String url, {
-  Map<String, dynamic>? body,
-  bool authRequired = true,
-  Map<String, String>? extraHeaders,
-}) =>
-    _request(
-      url: url,
-      method: HttpMethod.post,
-      body: body,
-      authRequired: authRequired,
-      extraHeaders: extraHeaders,
-    );
+    String url, {
+    Map<String, dynamic>? body,
+    bool authRequired = true,
+    Map<String, String>? extraHeaders,
+  }) => _request(
+    url: url,
+    method: HttpMethod.post,
+    body: body,
+    authRequired: authRequired,
+    extraHeaders: extraHeaders,
+  );
 
   Future<Map<String, dynamic>?> put(
     String url, {
-    bool authRequired = true,
     Map<String, dynamic>? body,
+    bool authRequired = true,
     Map<String, String>? extraHeaders,
-  }) =>
-      _request(
-        url: url,
-        method: HttpMethod.put,
-        body: body,
-        authRequired: authRequired,
-        extraHeaders: extraHeaders,
-      );
-}
+  }) => _request(
+    url: url,
+    method: HttpMethod.put,
+    body: body,
+    authRequired: authRequired,
+    extraHeaders: extraHeaders,
+  );
 
-enum HttpMethod { get, post, put, delete }
+  Future<Map<String, dynamic>?> delete(
+    String url, {
+    bool authRequired = true,
+    Map<String, String>? extraHeaders,
+  }) => _request(
+    url: url,
+    method: HttpMethod.delete,
+    authRequired: authRequired,
+    extraHeaders: extraHeaders,
+  );
+}

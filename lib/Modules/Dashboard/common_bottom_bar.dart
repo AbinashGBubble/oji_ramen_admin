@@ -21,7 +21,7 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
   String adminName = '';
   String adminEmail = '';
 
-  late PermissionController permissionController;
+  late ActivityTypeController activityController;
 
    final Set<int> _visitedIndices = {0};
 
@@ -71,9 +71,9 @@ class _CommonBottomBarState extends State<CommonBottomBar> {
       ),
     );
 
-    permissionController = Get.put(PermissionController(), permanent: true);
+    activityController = Get.put(ActivityTypeController(), permanent: true);
 
-    permissionController.loadPermissions();
+    activityController.loadPermissions();
   }
 
   Future<void> _loadAdminInfo() async {

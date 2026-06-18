@@ -18,7 +18,7 @@ class ApiEndpoints {
   static String addVisits(int id) => "${baseUrl}admin/addVisit/$id";
   static String redeemReward(int id) => "${baseUrl}admin/redeemReward/$id";
 
-  static const String getPermission = "${baseUrl}admin/permission";
+  static const String getActivity = "${baseUrl}activity/type";
 
   // /// Dynamic endpoint
   // static String getUser(String cardcode) {

@@ -1,16 +1,16 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:loyalty_admin/models/permission_response_.dart';
-import 'package:loyalty_admin/services/network/get_permission_api_service.dart';
+import 'package:loyalty_admin/models/activity_response_.dart';
+import 'package:loyalty_admin/services/network/get_activityType_api_service.dart';
 
 
-class PermissionController
+class ActivityTypeController
     extends GetxController {
   final api =
-      GetAppPermissionApiService();
+      GetActivityTypeApiService();
 
   final permissions =
-      <PermissionData>[].obs;
+      <ActivityData>[].obs;
 
   final isLoading =
       false.obs;
@@ -20,14 +20,14 @@ class PermissionController
       isLoading.value = true;
 
       final response =
-          await api.getAppManagement();
+          await api.getActivityType();
 
       if (response == null) {
         return;
       }
 
       final parsed =
-          PermissionResponse.fromJson(
+          ActivityTypeResponse.fromJson(
         response,
       );
 

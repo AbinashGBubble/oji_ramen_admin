@@ -13,10 +13,12 @@ class ScanQrScreen extends StatefulWidget {
   State<ScanQrScreen> createState() => _ScanQrScreenState();
 }
 
-class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver {
+class _ScanQrScreenState extends State<ScanQrScreen>
+    with WidgetsBindingObserver {
   final scanQrController = Get.find<ScanQrController>();
 
-  final bool _isSimulator = Platform.isIOS &&
+  final bool _isSimulator =
+      Platform.isIOS &&
       const bool.fromEnvironment('dart.vm.product') == false &&
       _isIOSSimulator();
 
@@ -57,9 +59,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
 
     isProcessing = true;
 
-    try {
-      await _cameraController?.stop();
+    // ✅ Stop camera FIRST before any async work
+    await _cameraController?.stop();
 
+    try {
       final success = await scanQrController.handleQrCode(code);
 
       if (!mounted) return;
@@ -67,15 +70,16 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
       if (success) {
         isNavigating = true;
         Get.toNamed(AppRoutes.enterManually);
-        return;
+        return; // do NOT restart camera — we're leaving this screen
       }
 
+      // Only restart if we're staying on this screen
       isProcessing = false;
-      if (mounted) await _safeStartCamera();
+      if (mounted && !isNavigating) await _safeStartCamera();
     } catch (e) {
       debugPrint("SCAN ERROR => $e");
       isProcessing = false;
-      if (mounted) await _safeStartCamera();
+      if (mounted && !isNavigating) await _safeStartCamera();
     }
   }
 
@@ -95,7 +99,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_cameraController == null) return;
     if (state == AppLifecycleState.resumed) {
-      _safeStartCamera();
+      if (!isNavigating) _safeStartCamera();
     } else if (state == AppLifecycleState.paused) {
       _cameraController!.stop();
     }
@@ -106,6 +110,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     isProcessing = false;
     isNavigating = false;
+    _cameraController?.stop();
     _cameraController?.dispose();
     super.dispose();
   }
@@ -135,8 +140,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
           // TOP BAR
           SafeArea(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
                 children: [
                   GestureDetector(
@@ -161,66 +165,61 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
             ),
           ),
 
-         Align(
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 180),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Align QR code within the frame",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
+          Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 180),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Align QR code within the frame",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                ),
-                const SizedBox(height: 25),
+                  const SizedBox(height: 25),
 
-                Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(.3),
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      _corner(Alignment.topLeft),
-                      _corner(Alignment.topRight),
-                      _corner(Alignment.bottomLeft),
-                      _corner(Alignment.bottomRight),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                GestureDetector(
-                  onTap: () async {
-                    await _cameraController?.toggleTorch();
-                  },
-                  child: Container(
-                    height: 60,
-                    width: 60,
+                  Container(
+                    width: 250,
+                    height: 250,
                     decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(.3)),
                     ),
-                    child: const Icon(
-                      Icons.flash_on,
-                      color: Colors.white,
-                      size: 28,
+                    child: Stack(
+                      children: [
+                        _corner(Alignment.topLeft),
+                        _corner(Alignment.topRight),
+                        _corner(Alignment.bottomLeft),
+                        _corner(Alignment.bottomRight),
+                      ],
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 24),
+
+                  GestureDetector(
+                    onTap: () async {
+                      await _cameraController?.toggleTorch();
+                    },
+                    child: Container(
+                      height: 60,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Icon(
+                        Icons.flash_on,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
 
           // BOTTOM SHEET
           Align(
@@ -241,8 +240,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                   children: [
                     const Text(
                       "Having trouble scanning?",
-                      style:
-                          TextStyle(color: Colors.black87, fontSize: 16),
+                      style: TextStyle(color: Colors.black87, fontSize: 16),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -261,8 +259,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        icon: const Icon(Icons.qr_code_2,
-                            color: Colors.white),
+                        icon: const Icon(Icons.qr_code_2, color: Colors.white),
                         label: const Text(
                           "Enter Code Manually",
                           style: TextStyle(
@@ -280,8 +277,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                       child: OutlinedButton(
                         onPressed: () => Get.back(),
                         style: OutlinedButton.styleFrom(
-                          side:
-                              BorderSide(color: Colors.grey.shade300),
+                          side: BorderSide(color: Colors.grey.shade300),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -318,8 +314,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
           // TOP BAR
           SafeArea(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
                 children: [
                   GestureDetector(
@@ -345,12 +340,15 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
           ),
 
           // CENTER message
-            Center(
-              child: Column(
+          Center(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.videocam_off_rounded,
-                    size: 64, color: Colors.white.withOpacity(0.5)),
+                Icon(
+                  Icons.videocam_off_rounded,
+                  size: 64,
+                  color: Colors.white.withOpacity(0.5),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   "Camera not available\non iOS Simulator",
@@ -393,9 +391,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                       width: double.infinity,
                       height: 58,
                       child: ElevatedButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
                           if (isNavigating) return;
                           isNavigating = true;
+                          await _cameraController?.stop();
                           Get.toNamed(AppRoutes.enterManually);
                         },
                         style: ElevatedButton.styleFrom(
@@ -404,8 +403,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        icon: const Icon(Icons.qr_code_2,
-                            color: Colors.white),
+                        icon: const Icon(Icons.qr_code_2, color: Colors.white),
                         label: const Text(
                           "Enter Code Manually",
                           style: TextStyle(
@@ -457,19 +455,23 @@ class _ScanQrScreenState extends State<ScanQrScreen> with WidgetsBindingObserver
         height: 42,
         decoration: BoxDecoration(
           border: Border(
-            top: alignment == Alignment.topLeft ||
+            top:
+                alignment == Alignment.topLeft ||
                     alignment == Alignment.topRight
                 ? const BorderSide(color: Color(0xffFF2D7A), width: 4)
                 : BorderSide.none,
-            left: alignment == Alignment.topLeft ||
+            left:
+                alignment == Alignment.topLeft ||
                     alignment == Alignment.bottomLeft
                 ? const BorderSide(color: Color(0xffFF2D7A), width: 4)
                 : BorderSide.none,
-            right: alignment == Alignment.topRight ||
+            right:
+                alignment == Alignment.topRight ||
                     alignment == Alignment.bottomRight
                 ? const BorderSide(color: Color(0xffFF2D7A), width: 4)
                 : BorderSide.none,
-            bottom: alignment == Alignment.bottomLeft ||
+            bottom:
+                alignment == Alignment.bottomLeft ||
                     alignment == Alignment.bottomRight
                 ? const BorderSide(color: Color(0xffFF2D7A), width: 4)
                 : BorderSide.none,

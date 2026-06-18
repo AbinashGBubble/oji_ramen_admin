@@ -108,12 +108,12 @@ class LoginController extends GetxController {
         );
 
         //Get.offAll(() => const CommonBottomBar());
-        final permissionController = Get.put(
-          PermissionController(),
+        final activityController = Get.put(
+          ActivityTypeController(),
           permanent: true,
         );
 
-        await permissionController.loadPermissions();
+        await activityController.loadPermissions();
 
         Get.offAll(() => const CommonBottomBar());
       } else {
